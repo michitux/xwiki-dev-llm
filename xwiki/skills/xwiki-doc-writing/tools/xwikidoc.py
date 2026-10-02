@@ -14,7 +14,14 @@ tool, never print it:
 Environment:
     XWIKI_USER, XWIKI_PASSWORD   required to write; a read without them goes out as Guest, which is
                                  enough for the public documentation (`xwiki-doc-export` reads that way)
-    XWIKI_BASE                   REST root of the main wiki (default www.xwiki.org's `xwiki`)
+    XWIKI_SERVER                 the webapp root that authenticated calls go to (default
+                                 https://www.xwiki.org/xwiki) — another URL for the same farm, such
+                                 as a proxy that adds the credentials itself
+    XWIKI_BASE                   REST root of the main wiki (default `<XWIKI_SERVER>/rest/wikis/xwiki`)
+
+The credentials are only sent to XWIKI_SERVER (and XWIKI_BASE's server). Rendered pages and the
+document tree are always read from www.xwiki.org, which serves them to anyone: with XWIKI_SERVER
+set elsewhere, those reads go out as Guest.
 """
 import base64
 import http.cookiejar
@@ -23,10 +30,17 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 
-WWW = os.environ.get('XWIKI_BASE', 'https://www.xwiki.org/xwiki/rest/wikis/xwiki')
+PUBLIC = 'https://www.xwiki.org/xwiki'
+SERVER = os.environ.get('XWIKI_SERVER', PUBLIC).rstrip('/')
+WWW = os.environ.get('XWIKI_BASE', SERVER + '/rest/wikis/xwiki')
 EXO = 'https://extensions.xwiki.org/xwiki/rest/wikis/extensions'
-VIEW = 'https://www.xwiki.org/xwiki/bin/view/'
+VIEW = PUBLIC + '/bin/view/'
+# Where the credentials may go: the farm's own hosts by default, and only the server otherwise — a
+# proxy that adds its own login is handed placeholders, which www.xwiki.org would reject.
+_AUTH_ROOTS = (SERVER + '/', WWW.split('/rest/', 1)[0] + '/') + (
+    (EXO.split('/rest/', 1)[0] + '/',) if SERVER == PUBLIC else ())
 
 # xwiki.org REST sits behind Cloudflare: it answers 403 both to a request with no User-Agent and to
 # one with a browser-like UA. A curl-style UA passes.
@@ -65,10 +79,10 @@ def viewurl(ref):
     return VIEW + '/'.join(urllib.parse.quote(s) for s in parts[:-1]) + '/'
 
 
-def call(url, method='GET', data=None, ctype=None, token=False, accept='application/json'):
+def call(url, method='GET', data=None, ctype=None, token=False, accept='application/json', extra=None):
     global _token
-    headers = {'User-Agent': _UA}
-    auth = _auth(required=token)
+    headers = {'User-Agent': _UA, **(extra or {})}
+    auth = _auth(required=token) if url.startswith(_AUTH_ROOTS) else None
     if auth:
         headers['Authorization'] = auth
     if accept:
@@ -207,10 +221,55 @@ def tree_children(ref):
     the tree macro what it will render. Non-document nodes (`attachments:…`, `translations:…`) are
     dropped: they are siblings of the real children in the response and would shift the order.
     """
-    url = ('https://www.xwiki.org/xwiki/bin/get/XWiki/DocumentTree'
+    url = (PUBLIC + '/bin/get/XWiki/DocumentTree'
            '?outputSyntax=plain&data=children&limit=100&id=document:xwiki:' + ref)
     st, _, b = call(url, accept='*/*')
     if st != 200:
         return st, []
     return st, [(n['text'], n['id'][len('document:xwiki:'):]) for n in json.loads(b)
                 if n['id'].startswith('document:xwiki:')]
+
+
+def changerequest_url(action, cr_id=None, wiki='xwiki'):
+    """`/changerequest/<wiki>/<action>[/<id>]` — the Change Request application's own actions,
+    outside REST: `create` takes no id, `addchanges`, `save`, `split`, `rebase` take the CR's."""
+    url = f'{SERVER}/changerequest/{wiki}/{action}'
+    return url + '/' + urllib.parse.quote(cr_id, safe='') if cr_id else url
+
+
+def changerequest(action, cr_id, pairs):
+    """POST one change-request action, as the editor does with `async=1`: (status, answer), the
+    answer being `{changeRequestId, changeRequestUrl}` on success and `{changeRequestError}` — or
+    an HTML error page as `{'error': …}` — otherwise. `create` and `addchanges` read the page from
+    the same fields as `/bin/save` (`docReference`, `title`, `content`, `syntaxId`,
+    `<Class>_<n>_<prop>` with `objectPolicy=updateOrCreate`, `uploadedFiles`)."""
+    data = form(list(pairs) + [('async', '1'), ('form_token', get_token())])
+    st, _, b = write(changerequest_url(action, cr_id), 'POST', data, 'application/x-www-form-urlencoded')
+    try:
+        return st, json.loads(b)
+    except ValueError:
+        return st, {'error': b.decode('utf-8', 'replace')[:300]}
+
+
+def upload_temporary(ref, name, path):
+    """Upload a file as a **temporary attachment** of a page, the way the editor does before a
+    save or a Change Request. It lives in the HTTP session — this module's cookie jar — until a
+    form names it in `uploadedFiles`, so the upload and that form must share the session.
+    Without `X-XWiki-Temporary-Attachment-Support` the same URL attaches the file to the page at once.
+    """
+    with open(path, 'rb') as f:
+        data = f.read()
+    boundary = uuid.uuid4().hex
+    body = (f'--{boundary}\r\nContent-Disposition: form-data; name="form_token"\r\n\r\n{get_token()}\r\n'
+            f'--{boundary}\r\nContent-Disposition: form-data; name="upload"; filename="{name}"\r\n'
+            'Content-Type: application/octet-stream\r\n\r\n').encode() + data + f'\r\n--{boundary}--\r\n'.encode()
+    parts = ref.split('.')
+    url = (SERVER + '/bin/get/' + '/'.join(urllib.parse.quote(s) for s in parts)
+           + '?sheet=XWiki.WYSIWYG.FileUploader&outputSyntax=plain')
+    st, _, b = call(url, 'POST', body, f'multipart/form-data; boundary={boundary}', token=True, accept='*/*',
+                    extra={'X-XWiki-Temporary-Attachment-Support': 'true'})
+    try:
+        ok = st == 200 and json.loads(b).get('uploaded') == 1
+    except ValueError:
+        ok = False
+    return ok, st, len(data)

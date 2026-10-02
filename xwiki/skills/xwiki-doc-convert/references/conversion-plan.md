@@ -169,7 +169,9 @@ Sized so each is one session's work. Adjust the set to the conversion; keep the 
 7. **`publish`** — the one task that writes to xwiki.org. Save the whole set in a single pass,
    **parents before children**, run `docpages.py verify`, fix what the live doc checker reports
    (page-name violations especially — the offline lint cannot see them all) and re-save, then
-   `docpages.py pin` the hub orders. Budget a session for the fix round, not just the save.
+   `docpages.py pin` the hub orders. Budget a session for the fix round, not just the save. As a
+   Change Request, `docpages.py cr` does the save and the pins; `verify` and the fix round follow
+   the merge, and a fix goes into the same CR while it is open.
 8. **`verify`** — the full "Verify the conversion" checklist in `SKILL.md`, run against
    `conversion/source/`.
 

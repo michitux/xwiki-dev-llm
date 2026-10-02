@@ -168,7 +168,7 @@ does **not** publish · **9** `dedup` · **10** `original-*` · **11** `deletion
     set. Save the pages **parents before children** so no page is ever live without its hub, then run
     `docpages.py verify`, which is the first time xwiki.org's own doc checker sees them: expect a
     round of fixes (page-name violations in particular) and re-save. Prefer a **Change Request** for
-    the whole set where the tooling can write into one — a conversion is a major change, the new
+    the whole set — `docpages.py cr` writes it into one. A conversion is a major change, the new
     pages and the original-page edits belong in the *same* one so a reviewer sees the move whole, and
     the pages stay invisible until it is merged. (The minor-change exception in
     `okf/conventions/documentation.md` does not apply to a conversion.) Saving direct instead is a

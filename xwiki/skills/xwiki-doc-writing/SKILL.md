@@ -72,6 +72,7 @@ set -a; . ~/.xwiki-credentials; set +a
 python3 tools/docpages.py lint      # offline; the mechanical rules of documentation.md
 python3 tools/docpages.py save      # idempotent publish, every field read back
 python3 tools/docpages.py pin       # child order, verified via the tree service
+python3 tools/docpages.py cr --title "…"   # instead of save + pin: one Change Request for the set
 python3 tools/docpages.py verify    # audit + BOTH doc-checker surfaces
 ```
 
@@ -153,7 +154,8 @@ everything a regex cannot decide.
     a hub page that narrates the feature instead of **linking every page it introduces**, both fail this
     step.
 13. **Save.** A new or substantially rewritten page is a **major** change: save it via a **Change
-    Request**, adding to an existing open one on that page if there is one. A pure typo, broken-link
+    Request** (`docpages.py cr`), adding to an existing open one on that page if there is one
+    (`--cr <id>`). A pure typo, broken-link
     or small-rephrasing fix is a **minor** change: save it **directly**, ticked "minor", with a short
     summary — do **not** open a Change Request for it. See `okf/conventions/documentation.md`.
     Then read any automatic documentation-check violations the save reports.

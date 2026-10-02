@@ -43,6 +43,11 @@ command so they are never printed:
 set -a; . ~/.xwiki-credentials; set +a
 ```
 
+`XWIKI_SERVER` points the tools at a URL for the same farm other than `https://www.xwiki.org/xwiki`
+— a proxy that adds the credentials itself, say. REST calls and writes go there, and only there are
+the credentials sent; rendered pages and the document tree are still read from www.xwiki.org, as
+Guest. `XWIKI_BASE` overrides the REST root on its own.
+
 ## The page set
 
 Write the pages as a `pages.py` in your working directory — a `<work>/<repo>/<date>-<slug>/`
@@ -75,6 +80,7 @@ PIN = {f"{ROOT}.WebHome": ["configure-keywords", "delete-spam-pages-users"]}   #
 python3 docpages.py lint          # offline. Iterate until it prints 0 problems.
 python3 docpages.py save          # idempotent: only what differs is written
 python3 docpages.py pin           # child order, verified through the tree service
+python3 docpages.py cr --title "…" # instead of save and pin: the whole set as one Change Request
 python3 docpages.py verify        # independent read-back audit + both checker surfaces
 ```
 
@@ -86,7 +92,7 @@ python3 docplan.py start 07       # before working on task 07
 python3 docplan.py done 07 "source/latex.txt + inventory, 41 items"
 ```
 
-`save` takes page references to limit it to those pages. Add `--pages <module>` before the command to
+`save` and `cr` take page references to limit them to those pages. Add `--pages <module>` before the command to
 use a module other than `pages.py`.
 
 Screenshots, per capture:
@@ -141,6 +147,20 @@ issued right after a content write can be dropped) and a malformed property writ
 while blanking the property. It creates the two `DocApp` objects a documentation page needs — a page
 missing `DocumentationExtensionClass` is incomplete though nothing visibly breaks — and never touches
 `DocumentationClass`'s own unused `content` property, which would clobber the page.
+
+**`cr`** — writes what `save` and `pin` would into **one Change Request**: `create` for the first
+page, `addchanges` for every other one and for the pinned parents' `WebPreferences`, each change
+carrying the content, both `DocApp` objects (`objectPolicy=updateOrCreate`, so a missing object is
+created) and the screenshots. Nothing is published until a reviewer merges it, so `verify` and the
+tree order wait until then. Screenshots go up as **temporary attachments**, the way the editor
+uploads them: they live in the HTTP session until the change names them, which is why the upload
+and the change go through the same cookie jar. `.change-request.json` in the working directory
+records the CR and the version of each page's last change in it, which the next change of that
+page must name, or the application reports a conflict: a re-run adds what changed since to the
+same CR and skips the rest. Delete the file to open a new one; `--cr <id>` adds to an existing CR
+someone else opened, for pages not yet in it. `--description` and `--draft` set the CR's
+description and draft status. A Change Request **cannot remove an attachment** — `cr` lists the
+ones to delete by hand once it is merged.
 
 **`pin`** — writes `XWiki.PinnedChildPagesClass` on the parent space's `WebPreferences` page, creating
 it hidden if the space has none, then asks the **tree service** what it will display. Reading the

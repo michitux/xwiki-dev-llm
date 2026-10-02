@@ -4,6 +4,7 @@
     set -a; . ~/.xwiki-credentials; set +a
     python3 docpages.py lint                    # offline; run until it prints 0 problems
     python3 docpages.py save [ref …]            # idempotent publish (page, attachments, xobjects)
+    python3 docpages.py cr --title "…" [ref …]  # the same, and the pins, as one Change Request
     python3 docpages.py pin                     # pin child order, verified via the tree service
     python3 docpages.py verify                  # read-back audit + both doc-checker surfaces
 
@@ -24,7 +25,9 @@ The page set is a module (default `pages.py` in the current directory, override 
 The rules enforced here are the mechanical subset of okf/conventions/documentation.md — the ones a
 regex can decide. They are not a substitute for the review checklist in the skill.
 """
+import hashlib
 import importlib
+import json
 import os
 import re
 import sys
@@ -317,12 +320,9 @@ def save(mod, only=None):
 
         st, existing = x.list_objects(x.WWW, ref)
         have = {cn for cn, _ in existing}
-        docprops = {'type': p['type'], 'target': p['target'], 'faq': p['faq'],
-                    'highlights': p['highlights'], 'related': p['related']}
-        # DocumentationClass defines its own unused `content` property — never merge it with the
-        # page content, it would clobber the page.
+        props = docprops(p)
         if DOC_CLASS not in have:
-            st, _, b = x.post_object(x.WWW, ref, DOC_CLASS, docprops)
+            st, _, b = x.post_object(x.WWW, ref, DOC_CLASS, props)
             print('  DocumentationClass', st)
             if st != 201:
                 problems.append(f'{ref}: {DOC_CLASS} -> {st} {b}')
@@ -333,7 +333,7 @@ def save(mod, only=None):
                 problems.append(f'{ref}: {EXT_CLASS} -> {st} {b}')
 
         st, got = x.get_object(x.WWW, ref, DOC_CLASS)
-        for k, v in docprops.items():
+        for k, v in props.items():
             if ((got or {}).get(k) or '') != v:
                 x.put_property(x.WWW, ref, DOC_CLASS, 0, k, v)
                 st, again = x.get_object(x.WWW, ref, DOC_CLASS)
@@ -345,6 +345,130 @@ def save(mod, only=None):
             st, again = x.get_object(x.WWW, ref, EXT_CLASS)
             if ((again or {}).get('id') or '') != p['ext']:
                 problems.append(f'{ref}: {EXT_CLASS}.id read-back mismatch')
+    return problems
+
+
+CR_STATE = '.change-request.json'
+
+
+def docprops(p):
+    # DocumentationClass defines its own unused `content` property — never merge it with the page
+    # content, it would clobber the page.
+    return {'type': p['type'], 'target': p['target'], 'faq': p['faq'], 'highlights': p['highlights'],
+            'related': p['related']}
+
+
+def next_filechange_version(previous, live):
+    """The version the Change Request gives the change just added, which the next `addchanges`
+    of that page must name as `previousVersion`. The first change of an existing page is the next
+    major of its version (1.1 -> 2.1), of a new page 1.1, every later one a minor step (2.1 -> 2.2)."""
+    if previous:
+        major, minor = previous.split('.')
+        return f'{major}.{int(minor) + 1}'
+    if live:
+        return f'{int(live["version"].split(".")[0]) + 1}.1'
+    return '1.1'
+
+
+def cr_changes(mod, only):
+    """(ref, form fields, attachments to upload) for each page of the set, then for each pinned
+    parent's WebPreferences — parents before children, in ALL's order."""
+    for p in mod.ALL:
+        if only and p['ref'] not in only:
+            continue
+        pairs = [('title', p['title']), ('content', p['content']), ('syntaxId', 'xwiki/2.1')]
+        pairs += [(f'{DOC_CLASS}_0_{k}', v) for k, v in docprops(p).items()]
+        pairs.append((f'{EXT_CLASS}_0_id', p['ext']))
+        yield p['ref'], pairs, [(a, os.path.join(shots_dir(mod), a)) for a in p['attachments']]
+    for parent, children in getattr(mod, 'PIN', {}).items():
+        prefs = parent.rsplit('.', 1)[0] + '.WebPreferences'
+        if only and parent not in only and prefs not in only:
+            continue
+        yield prefs, [(f'{PIN_CLASS}_0_pinnedChildPages', '|'.join(c.rstrip('/') + '/' for c in children))], []
+
+
+def change_request(mod, only=None, title=None, description='', draft=False, cr_id=None):
+    """Writes the page set into one Change Request instead of saving it: `create` for the first
+    page, `addchanges` for each other one. Nothing is published until a reviewer merges it.
+
+    `.change-request.json` in the current directory records the CR and, per page, the version of
+    its last change there, which the next change of that page has to name — so a re-run adds the
+    pages that changed since to the same CR, and skips the others. Delete it to open a new one.
+    """
+    try:
+        with open(CR_STATE, encoding='utf-8') as f:
+            state = json.load(f)
+    except (OSError, ValueError):
+        state = {}
+    if cr_id and state.get('id') not in (None, cr_id):
+        raise SystemExit(f'{CR_STATE} records the change request {state["id"]}; delete it to add to {cr_id}')
+    state.setdefault('versions', {})
+    state.setdefault('sent', {})
+    state.setdefault('attachments', {})
+    state['id'] = state.get('id') or cr_id
+    if not state['id'] and not title:
+        raise SystemExit('a new change request needs --title "…"')
+    problems = []
+    for ref, pairs, attachments in cr_changes(mod, only):
+        print('===', ref)
+        st, live = x.getjson(x.pageurl(x.WWW, ref))
+        live = live if st == 200 else None
+        if live is None and ref.endswith('.WebPreferences'):
+            pairs = [('title', 'Page Administration'), ('content', ''), ('syntaxId', 'xwiki/2.1'),
+                     ('xhidden', '1')] + pairs
+        fingerprint = hashlib.sha256(json.dumps([pairs, [(a, os.path.getsize(f)) for a, f in attachments]])
+                                     .encode()).hexdigest()
+        on_page = dict(x.list_attachments(x.WWW, ref)[1]) if live else {}
+        leftover = sorted(set(on_page) - {a for a, _ in attachments})
+        if leftover:
+            problems.append(f'{ref}: a change request cannot remove attachments; delete {leftover} on the'
+                            ' page once it is merged')
+        if state['sent'].get(ref) == fingerprint:
+            print('  unchanged since the last change')
+            continue
+
+        in_cr = state['attachments'].get(ref, {})
+        uploaded, failed = [], False
+        for name, path in attachments:
+            size = os.path.getsize(path)
+            if in_cr.get(name, on_page.get(name)) == size:
+                continue
+            ok, st, size = x.upload_temporary(ref, name, path)
+            print(f'  upload {name} -> {st} ({size} bytes)')
+            if not ok:
+                problems.append(f'{ref}: uploading {name} -> {st}')
+                failed = True
+            uploaded.append((name, size))
+        if failed:
+            continue
+
+        fields = [('docReference', ref), ('objectPolicy', 'updateOrCreate'), *pairs]
+        fields += [('uploadedFiles', name) for name, _ in uploaded]
+        previous = state['versions'].get(ref)
+        if previous:
+            fields += [('previousVersion', previous), ('fromchangerequest', '1')]
+        elif live:
+            fields.append(('previousVersion', live['version']))
+        action = 'addchanges' if state['id'] else 'create'
+        if action == 'create':
+            fields += [('crTitle', title), ('crDescription', description)] + ([('crDraft', '1')] if draft else [])
+        st, answer = x.changerequest(action, state['id'], fields)
+        print(f'  {action} -> {st}')
+        if st != 200 or 'changeRequestId' not in answer:
+            problems.append(f'{ref}: {action} -> {st} '
+                            f'{answer.get("changeRequestError") or answer.get("error", "")}'.rstrip())
+            if action == 'create':
+                break  # the next page would open a second change request
+            continue
+        state.update(id=answer['changeRequestId'], url=answer['changeRequestUrl'])
+        state['versions'][ref] = next_filechange_version(previous, live)
+        state['sent'][ref] = fingerprint
+        state['attachments'].setdefault(ref, {}).update(dict(uploaded))
+        with open(CR_STATE, 'w', encoding='utf-8') as f:
+            json.dump(state, f, indent=2)
+    if state.get('url'):
+        print('\nChange request:', '/'.join(x.VIEW.split('/')[:3]) + state['url'])
+        print('Pinned order and the doc checker are only verifiable once it is merged: then run `verify`.')
     return problems
 
 
@@ -496,12 +620,24 @@ def main():
         problems = lint(mod)
     elif command == 'save':
         problems = save(mod, only=argv[1:] or None)
+    elif command == 'cr':
+        options = {}
+        for flag in ('--title', '--description', '--cr'):
+            if flag in argv:
+                i = argv.index(flag)
+                options[flag[2:]] = argv[i + 1]
+                del argv[i:i + 2]
+        draft = '--draft' in argv
+        argv = [a for a in argv if a != '--draft']
+        problems = change_request(mod, only=argv[1:] or None, title=options.get('title'),
+                                  description=options.get('description', ''), draft=draft,
+                                  cr_id=options.get('cr'))
     elif command == 'pin':
         problems = pin(mod)
     elif command == 'verify':
         problems = verify(mod)
     else:
-        raise SystemExit(f'unknown command {command!r} (lint | save | pin | verify)')
+        raise SystemExit(f'unknown command {command!r} (lint | save | cr | pin | verify)')
     print(f'\n{len(mod.ALL)} page(s), {len(problems)} problem(s)')
     for p in problems:
         print(' -', p)
