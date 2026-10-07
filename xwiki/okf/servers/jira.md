@@ -192,6 +192,13 @@ container, escape only *active* markup — never over-escape, and never escape i
   so short `<…>` tokens are fine inline — but it must not be glued to an adjacent word character:
   `{{curl}}s` fails to parse and renders literally as `{{curl}}s` (add a space or reword). For
   multi-line commands or `sed`/XML/YAML, use a `{code}`/`{noformat}` block (raw), as good descriptions do.
+- **No hard line breaks in prose.** The renderer turns every newline inside a paragraph or a list item
+  into a visible line break, so text wrapped at 80/120 columns renders as ragged short lines. Write each
+  paragraph and each list item on **one line**; only `{code}`/`{noformat}` blocks keep their newlines.
+- **XWiki syntax never goes in `{{monospace}}`.** Wiki syntax containing `{{`/`}}` (`{{velocity}}`,
+  `{{display reference="…"/}}`) collides with the monospace delimiters: it breaks the parse and leaves
+  `{{{}…{}}}` / `{{[}}` debris. Put any snippet of XWiki syntax in a `{noformat}` block, even a
+  one-liner, or name it in prose ("the display macro") instead of quoting it inline.
 
 **Editing a comment** (e.g. to fix a mis-rendered one) is REST-only — `jira-cli` cannot edit
 comments: `PUT /rest/api/2/issue/{KEY}/comment/{ID}` with JSON `{"body": "…"}`. **Verify** afterwards
