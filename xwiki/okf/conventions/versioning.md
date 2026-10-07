@@ -30,7 +30,7 @@ A division of labour between the annotation and the Javadoc tag:
   duplicate the annotation, and the javadoc tool already renders the annotation's `since`. So
   `@deprecated use {@link #getRoleType()} instead`, not `@deprecated since 4.4M1, use …`.
 - **A deprecation done on several branches lists ALL of its versions in `since`, comma-separated** —
-  `@Deprecated(since = "15.5RC1,14.10.12")`. Do **not** pick one of them (neither the newest nor the
+  `@Deprecated(since = "14.10.12,15.5RC1")`. Do **not** pick one of them (neither the newest nor the
   oldest): each version-line in which the deprecation shipped belongs in the list. No ordering is
   prescribed, so keep the order the source used.
 
@@ -38,7 +38,8 @@ A division of labour between the annotation and the Javadoc tag:
 version-line where the API becomes available, keeping the original, and make the block **identical
 on every branch** the code lives on (master included). Write the lines **ascending** (`@since 17.10.10`
 / `@since 18.4.3` / `@since 18.5.0RC1`), but the order is not an XWiki rule: never flag or reorder an
-existing block for it.
+existing block for it. When it is clear that a change will be backported (a security fix, an
+important bug fix), add all its versions right away.
 
 **`@since` goes on reusable code, not only on public API.** Anything something else calls carries
 `@since` — including `internal` classes and methods, and the *tools* tests are written with: page
@@ -56,6 +57,11 @@ To get the current dev version:
 
 - Read the root `pom.xml` `<version>` of the repo you are in, or
 - Look at the SNAPSHOT jar names under `~/.m2` / nexus.
+
+The version a change will **ship in on another branch** (the `@since` line of a backport, a JIRA Fix
+Version, an advisory's patched version) is that branch's root `pom.xml` version without `-SNAPSHOT`:
+`git fetch origin <branch> && git show origin/<branch>:pom.xml`, where `16.10.20-SNAPSHOT` gives
+`16.10.20`.
 
 XWiki Commons, XWiki Rendering and XWiki Platform are **released together with the same version**,
 so the same version string applies across those repos.
