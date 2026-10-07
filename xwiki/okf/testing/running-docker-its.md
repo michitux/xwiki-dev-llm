@@ -61,6 +61,17 @@ below. Repair the machine and re-run; do not start debugging the change.
 | `Reached error page: about:neterror?e=dnsNotFound&u=http://xwikiweb:8080/…` | containerised engine only — the browser cannot resolve the `xwikiweb` alias. Daemon under load, or a stale/broken testcontainers network |
 | `SocketException: Connection reset` while provisioning extensions | the servlet container was still booting when provisioning started; daemon starved |
 | `NullPointerException: networkMode was not specified` starting `standalone-firefox`, or `all predefined address pools have been fully subnetted` | the daemon has no address pool left for a new network: earlier runs leaked their testcontainers networks (see below) |
+| `Can't find descriptor for the component …` or `Failed to initialize mandatory document` at startup, then a `500` while provisioning | the WAR mixes SNAPSHOT jars built before and after a recent commit of the branch (see below) |
+
+### Mixed SNAPSHOT jars after the branch moved
+
+The test WAR is assembled from the branch's `X.Y.Z-SNAPSHOT` jars in `~/.m2`, which come from Nexus
+unless you built them yourself. When a commit landed on the branch after the last Nexus deploy and
+changed several modules together, the WAR can combine a new jar with the old jars of its siblings,
+and XWiki fails at startup. Find the recent commits (`git log origin/<branch> --since=<date of the
+jars>`), then `install` the modules they touched from the branch with `-DskipTests`, adding
+`:xwiki-platform-web-war` when templates changed. Pass `-Pintegration-tests,docker`, or
+`:xwiki-platform-test-ui` and the other test framework modules are not in the reactor.
 
 `JETTY_STANDALONE` needs the right JDK **on `PATH`**, not only in `JAVA_HOME`, because the wiki's JVM
 is spawned by a shell script.

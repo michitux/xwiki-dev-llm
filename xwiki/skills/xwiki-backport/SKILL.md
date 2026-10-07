@@ -174,6 +174,10 @@ mvn -B -ntp -Plegacy -DskipTests test-compile
   *published* dependency without the new class. First `install` the changed page-object module(s) from
   the branch (or build from the reactor root with `-pl <module> -am`). CI builds the full reactor so it
   doesn't hit this.
+- **A Docker IT that fails at XWiki startup** on the target branch usually means stale sibling
+  SNAPSHOT jars rather than a backport defect: a commit merged on the branch since the last Nexus
+  deploy changed several modules together. See "Mixed SNAPSHOT jars after the branch moved" in
+  `okf/testing/running-docker-its.md` for the symptom and the rebuild.
 - **CI on each PR is authoritative** for functional runs on real infrastructure. To run a Docker IT
   locally as a demo, use the `xwiki/build` DockerHub image (github.com/xwiki/xwiki-docker-build),
   mounting the docker socket (Docker-out-of-Docker) and your `~/.m2`:
