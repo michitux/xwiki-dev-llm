@@ -146,10 +146,10 @@ the vector of its own impact in JIRA and gets the advisory link (Step 6).
 | Advisory field | Source |
 |---|---|
 | Title | JIRA `summary` |
-| Impact prose | JIRA `description`'s explanation, rewritten as affected feature + attack vector + requirements + impact + affected versions, in your own words — **without the PoC** (see "No proof of concept in the advisory") and not a verbatim copy-paste of internal notes |
+| Impact prose | JIRA `description`'s explanation, rewritten as affected feature + attack vector + requirements + impact + affected versions, in your own words — **without the PoC** (see "No proof of concept in the advisory") and not a verbatim copy-paste of internal notes. Keep the **requirements exact**: name each right or setting the attacker needs (e.g. "edit right on any page and comment right on a page whose author has programming right"), so an admin with non-standard rights can tell whether their wiki is affected, and say which of them standard rights give everyone. Keep the **mechanism general**: name the feature and what goes wrong, but not which page to target, which parameter to set or in which order, since that turns the prose into a PoC. Write each paragraph on one line (the "never hard-wrap prose" rule): GitHub keeps hard line breaks |
 | CVSS table | The vector found in Step 1, valued per the Step 2 scoring guidance, worded per the Step 3 precedent for the *comment* column |
 | Affected package(s) / vulnerable version range | The module(s) touched, and `versions` (Affects), verified against the code history → GitHub's version-range syntax — see "Affected products (packages) and version ranges" below, which also covers updating JIRA when they differ |
-| Patches | `fixVersions` if the fix isn't released yet ("will be fixed in…"); the actual released versions + patch commit once it is |
+| Patches | `fixVersions` if the fix isn't released yet ("will be fixed in…"); the actual released versions + patch commit once it is. While `fixVersions` is still empty, take each maintained branch's next release from its root `pom.xml` (`okf/conventions/versioning.md`), and mark them as to be confirmed |
 | Workarounds | From the JIRA description if a mitigation is mentioned, else "no known workaround other than upgrading" |
 | References | The JIRA issue URL, plus the fix commit's SHA/URL — use an explicit placeholder such as `[commit SHA once merged]` until the fix actually lands, matching the Patches row below |
 | Credit / Attribution | `reporter`, or a named security researcher from the description — **ask the user to confirm the reporter consents to be credited** before naming them, and note that a non-committer reporter needs adding as a collaborator on the draft. Credit type (GitHub's definitions): `finder` for the person who discovered the vulnerability, also when they reported it themselves; `reporter` only for someone who passed on a finding that isn't theirs. Also link their account in the Attribution section: `[@login](https://github.com/login)` |
@@ -157,7 +157,11 @@ the vector of its own impact in JIRA and gets the advisory link (Step 6).
 CWE: pick the closest match from https://cwe.mitre.org/data/index.html — this is a per-vulnerability
 judgment call, not something to default without reasoning about the actual flaw (e.g. broken access
 control against a user-controlled identifier is usually CWE-639, missing authorization generally is
-CWE-862, XSS is CWE-79, etc.).
+CWE-862, XSS is CWE-79, etc.). Check the entry's **Vulnerability Mapping** "Usage" on its MITRE page:
+use an `ALLOWED` (or `ALLOWED-WITH-REVIEW`) entry, never a `DISCOURAGED` or `PROHIBITED` one. Broad
+class entries such as CWE-269 (Improper Privilege Management) are discouraged; pick the Base-level
+child that names the flaw, e.g. CWE-270 (Privilege Context Switching Error) for content executed with
+the wrong author's rights.
 
 ### Affected products (packages) and version ranges
 
@@ -251,7 +255,9 @@ not the repository one.
   Version/s", or the patched versions from its "Fix Version/s", update the issue with the verified
   values (xwiki-jira skill; the field conventions are in `okf/servers/jira.md`), so that JIRA, the
   advisory and the Security Advisory Application agree. The same goes for the CVSS vector and score
-  when the advisory's differ from the issue's (fields in `okf/processes/security-policy.md`). Without write access
+  when the advisory's differ from the issue's (fields in `okf/processes/security-policy.md`), and for
+  the **Priority**, which the policy derives from the score (Step 2's "Severity" section: Critical at
+  7 or above, Major below, unless a committer raised it). Without write access
   to JIRA (e.g. no token), tell the user exactly which values to set on which issue instead of
   leaving it silently out of sync.
   Optionally, also link the issue(s) that introduced the vulnerable code: the commits found for the
