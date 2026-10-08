@@ -76,7 +76,9 @@ complete every section meaningfully:
 **Run a SonarCloud PR analysis on any PR that changes Java, not only on a Sonar cleanup**, whenever a
 `SONARQUBE_TOKEN` is available. It applies the same quality gate as the branch and is the *only*
 pre-merge check for the rules computed server-side (`javabugs:*` dataflow findings never appear in a
-local build or in the IDE). Run it after `gh pr create`, since it needs the PR number:
+local build or in the IDE). Run it after `gh pr create`, since it needs the PR number, from the
+repository root on the whole reactor — not with `-pl`, not from inside a module
+(`okf/sonarqube/verification.md` says why):
 
 ```bash
 mvn -B -ntp -T 1C install -DskipTests   # compile only — no tests, no -Pquality, no coverage needed
