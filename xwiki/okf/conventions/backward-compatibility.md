@@ -6,6 +6,7 @@ summary: Revapi enforces binary/semantic compatibility of public APIs, though no
   methods, not new interfaces; main code never uses another project's `internal` packages.
 sources:
   - https://dev.xwiki.org/xwiki/bin/view/Community/DevelopmentPractices#HBackwardCompatibility
+  - https://dev.xwiki.org/xwiki/bin/view/Community/CodeStyle/JavaCodeStyle/#HPackagenames
 ---
 
 # Backward compatibility policy
