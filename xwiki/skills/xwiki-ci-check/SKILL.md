@@ -119,7 +119,7 @@ together.
 |---|---|
 | `class` / `kind` | 1 `test-breakage`/`flicker`, 2 `build-break`/`unclassified`, 3 `infra`, 4 `timeout`, 5 `absence` |
 | `state` | `systematic`, `intermittent`, `single env`, `first seen`, the infra pattern, `absent` |
-| `ageDays`, `ageIsLowerBound` | days since the first bad build; `≥` when the history ran out first. The **current streak** in the builds Jenkins retains — `develocity.firstSeen` is when the failure started |
+| `ageDays`, `ageIsLowerBound` | days since the first bad build; `≥` when the history ran out first. The **current streak** in the builds Jenkins retains — `develocity.firstSeen` is when the failure started. A `deep` test breakage with no green build in `--history` is walked back further, over everything Jenkins retains (`--blame-history`), so that blame has a window to read |
 | `beyondHorizon` | older than 7 days ⇒ **no write of any kind**, digest only |
 | `blame.tier` | `certain` \| `likely` \| `ambiguous` \| `none` \| `unknown` |
 | `fixState` | something already answers this incident — `fix-unbuilt` a commit CI has not built yet, `fix-in-flight` an open PR, `stale-snapshot` the job ran new test code against older jars, `announced` the room was told this failure was coming, `being-handled` somebody has said they are on it, `fixed-elsewhere` the same failure is green again on another branch ⇒ **one line, no analysis, no write** |
@@ -434,12 +434,34 @@ when none of that is open, never instead of it. `summary.stabilise.blockers` is 
 | Tier | What | PR |
 |---|---|---|
 | **A — mechanical** | License headers, a Checkstyle violation the error localises exactly (line > 120 chars, unused import, whitespace, missing newline), a trivially broken compile after a rename | ready for review |
+| **A — additive** | A module's coverage check (`xwiki.jacoco.instructionRatio`) failing because a change left code uncovered: add the missing unit tests with `xwiki-increase-test-coverage`. **Never lower the ratio, never edit an existing test** | ready for review |
 | **B — inferred** | A UI change renamed a selector and the page object still queries the old one; renamed or moved test resources | **draft** |
-| **C — never** | Changing an assertion, an expected value, a timeout, or any production logic | — |
+| **B — follows the culprit** | A *unit* test whose stub, `verify` or expected value still holds what the culprit commit's own diff changed (`null` → an empty array, an old message, a renamed key) — under the conditions below | **draft**, phrased as a question |
+| **C — never** | Changing an assertion, an expected value, a timeout, or any production logic — the one exception is the row above | — |
 
 **Tier C is a safety rule, not a limit on capability.** A failing assertion is the hypothesis that
 the product is wrong; "fixing" it by editing the expectation launders a real regression into a green
 build. If a fix seems to need an assertion change, that is a comment to a human, not a PR.
+
+**"Follows the culprit" is that comment, made answerable in one click — and nothing wider.** The
+case it exists for: `de77ad26` made `getCookies()` return an empty array instead of `null`, and
+`BrowserPDFPrinterTest` kept stubbing `navigate(…, eq((Cookie[]) null), …)`. The fix is one line,
+but only the author knows whether the change was meant — if the browser treats the two differently,
+that line hides the regression. So the PR *asks*, and every one of these must hold, or there is no
+PR and the case goes back to being a comment:
+
+- `blame.tier` is `certain` or `likely`, and the culprit is a person — the PR is **assigned to that
+  author**, who is the one reader able to answer. Never for a flicker: it has no culprit commit.
+- The test is a **unit** test. A functional test asserts what a user sees, and editing that is a
+  product decision (`okf/testing/strategy.md`).
+- The culprit's own diff changed the very value the test still expects, and the test change
+  **mirrors that diff line and nothing else** — quote both in the body. A value the diff does not
+  show is a guess.
+- The body **opens with the question**: *"`<sha>` changed `<what>` from `<old>` to `<new>`;
+  `<test>` still expects `<old>`. If that change is intended, merge this. If not, the bug is in
+  `<sha>`: close this and fix it there."* It stays a **draft**; the author, not the bot, promotes it.
+- Where §4 posts a commit comment on the same incident, the comment links the draft PR rather than
+  repeating its argument.
 
 Verify before opening, always, and **fail closed** — if verification fails there is no PR, and the
 attempted fix goes into the paste instead:
@@ -449,7 +471,8 @@ xmvn clean install -B -ntp -pl <module-path> -Plegacy,quality
 ```
 
 Always `clean`, always `-Pquality` (`xwiki-build` owns these commands; `xmvn` picks the branch's
-JDK). **The functional tests are not run** — they take hours. So the PR must **assign the culprit
+JDK) — for an *additive* fix that is also the proof: the coverage check passing at the ratio the pom
+already declares. **The functional tests are not run** — they take hours. So the PR must **assign the culprit
 author** and say plainly, in its body, that the ITs were not run and the author should verify before
 merging. Jenkins does not build PRs, so there is no free oracle: this verification is the only one.
 Follow `xwiki-pull-request` for the commit message and the description.
@@ -494,7 +517,8 @@ Then, and only for that one:
    those three and not the branch in that label: it is where the failure concentrates across all of
    them, and the branch to reproduce on is the incident's own.
 2. **Fix it inside Tier C.** The table above is unchanged and is not negotiable here: no assertion,
-   no expected value, no timeout, no production logic. A flicker whose fix needs one of those is a
+   no expected value, no timeout, no production logic — and its one exception, which needs a
+   culprit commit, never applies to a flicker. A flicker whose fix needs one of those is a
    **comment on its JIRA issue** saying what was found, and no PR.
 3. **Measure after**, with `--label after --baseline <before>/report.json`.
 4. **Fail closed on the rate.** No improvement, or too few executions to tell, means **no PR** — the

@@ -29,6 +29,8 @@ const USAGE = `Usage: node ci-check.mjs [options]
   --horizon <days>    Blame horizon: no write is proposed for an older incident (default 7)
   --budget <n>        Incidents marked for deep treatment (default 5)
   --history <n>       Builds of history to age and rate a failure over (default 8)
+  --blame-history <n> Builds a deep test breakage with no green build in --history is walked back
+                      over to find one to blame from (default 25, about what Jenkins retains)
   --absence <days>    Days without a build that make a dev/LTS branch an incident (default 3)
   --max-console <n>   Consecutive broken builds whose log is read, per job (default 4)
   --no-github         Skip blame attribution and the "already commented?" check
@@ -52,7 +54,7 @@ Without one, blame and comment-dedupe are unavailable and every incident comes b
 function parseArgs(argv) {
   const out = {
     repos: ['xwiki-commons', 'xwiki-rendering', 'xwiki-platform'], branch: null, horizon: 7,
-    budget: 5, history: 8, absence: 3, maxConsole: 4, github: true, develocity: true,
+    budget: 5, history: 8, blameHistory: 25, absence: 3, maxConsole: 4, github: true, develocity: true,
     full: false, pretty: false,
     renderDetail: null, live: false, delta: null, previous: null, chat: null
   };
@@ -63,6 +65,7 @@ function parseArgs(argv) {
     else if (key === '--horizon') out.horizon = Number(argv[++i]);
     else if (key === '--budget') out.budget = Number(argv[++i]);
     else if (key === '--history') out.history = Number(argv[++i]);
+    else if (key === '--blame-history') out.blameHistory = Number(argv[++i]);
     else if (key === '--absence') out.absence = Number(argv[++i]);
     else if (key === '--max-console') out.maxConsole = Number(argv[++i]);
     else if (key === '--no-github') out.github = false;
@@ -1839,6 +1842,10 @@ async function investigate(incident, job, args) {
     };
     return;
   }
+  if (incident.class === 1 && incident.window && !incident.window.lastGood) {
+    incident.window = await deeperTestWindow(incident, job, args);
+    Object.assign(incident, ageOf(incident.window));
+  }
   const { firstBad, lastGood } = incident.window || {};
   if (!firstBad || !lastGood) {
     incident.blame = { tier: 'ambiguous', reason: 'no green build in the fetched history', suspects: [] };
@@ -1863,6 +1870,39 @@ async function investigate(incident, job, args) {
   } catch (error) {
     incident.blame = { tier: 'unknown', reason: `attribution failed: ${error.message}`, suspects: [] };
   }
+}
+
+/**
+ * The regression window of a deep test breakage, walked back past `--history` to its last green.
+ *
+ * Eight builds is the right depth to rate a flicker and the wrong one to blame a breakage: master
+ * builds three or four times a day, so a test broken for two days has no green build left in the
+ * window, and "no green build in the fetched history" made it `ambiguous` — no comment, nobody to
+ * assign a fix to — exactly while its author could still act on it. `BrowserPDFPrinterTest` sat
+ * there from #8989 to #9004 with its last green at #8988, the build before the commit that broke
+ * it. Paid only here, for the few incidents that won a deep slot, from the builds Jenkins retains.
+ *
+ * A build in which none of the incident's tests ran says nothing either way and is skipped, as in
+ * `testHistory`; the walk stops at the first build in which every one of them that ran passed.
+ *
+ * @returns {object} the deepened window, or the one the sweep had when the walk found no green
+ */
+async function deeperTestWindow(incident, job, args) {
+  const { window } = incident;
+  if (!incident.tests?.length || !window.firstBad || args.blameHistory <= args.history) return window;
+  const builds = (await buildSummaries(job.url, args.blameHistory))
+    .filter(build => !build.building && build.result && build.totalCount != null);
+  const start = builds.findIndex(build => build.number === window.firstBad.number);
+  if (start < 0) return window;
+  let firstBad = builds[start];
+  for (const build of builds.slice(start + 1)) {
+    const { ran, failed } = await outcomesOf(`${job.url}/${build.number}`);
+    const present = incident.tests.filter(id => ran.has(id));
+    if (!present.length) continue;
+    if (present.every(id => !failed.has(id))) return { ...window, firstBad, lastGood: build, atLeast: false };
+    firstBad = build;
+  }
+  return { ...window, firstBad, atLeast: true };
 }
 
 // ---- Budget ----------------------------------------------------------------------------------
