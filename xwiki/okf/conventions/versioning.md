@@ -2,7 +2,8 @@
 title: Versions in code and issues (@since / @Deprecated, affected version)
 stability: durable
 summary: Use the next release of the current dev version, written <X.Y.0>RC1, for @since and
-  @Deprecated(since=…). The current version itself is volatile — read it from pom.xml. A deprecation
+  @Deprecated(since=…). The current version itself is volatile — read it from pom.xml, and another
+  branch's from its pom.xml on origin, never from local tags. A deprecation
   done on several branches lists ALL its versions, comma-separated, in the annotation. An issue's
   affected version is the oldest released version that has the problem.
 sources:
@@ -39,7 +40,8 @@ version-line where the API becomes available, keeping the original, and make the
 on every branch** the code lives on (master included). Write the lines **ascending** (`@since 17.10.10`
 / `@since 18.4.3` / `@since 18.5.0RC1`), but the order is not an XWiki rule: never flag or reorder an
 existing block for it. When it is clear that a change will be backported (a security fix, an
-important bug fix), add all its versions right away.
+important bug fix), the original commit already carries one line per branch it will reach; remove a
+line whose backport does not happen.
 
 **`@since` goes on reusable code, not only on public API.** Anything something else calls carries
 `@since` — including `internal` classes and methods, and the *tools* tests are written with: page
@@ -59,9 +61,10 @@ To get the current dev version:
 - Look at the SNAPSHOT jar names under `~/.m2` / nexus.
 
 The version a change will **ship in on another branch** (the `@since` line of a backport, a JIRA Fix
-Version, an advisory's patched version) is that branch's root `pom.xml` version without `-SNAPSHOT`:
-`git fetch origin <branch> && git show origin/<branch>:pom.xml`, where `16.10.20-SNAPSHOT` gives
-`16.10.20`.
+Version, an advisory's patched version) comes from that branch's root `pom.xml` on the remote —
+`git fetch origin <branch> && git show origin/<branch>:pom.xml` — never from local tags or a local
+checkout, which go stale. Drop `-SNAPSHOT` on a stable branch (`16.10.20-SNAPSHOT` gives `16.10.20`);
+an `X.Y.0-SNAPSHOT` (master) gives `X.Y.0RC1`, as above.
 
 XWiki Commons, XWiki Rendering and XWiki Platform are **released together with the same version**,
 so the same version string applies across those repos.
