@@ -75,8 +75,8 @@ The project is **migrating away from `javax.*` in favour of `jakarta.*`**. In ne
 ## Backward compatibility
 
 Public API changes are checked for binary/semantic compatibility by **Revapi** (in the `quality`
-profile). See [[backward-compatibility]] for the policy, the `@Unstable` lifecycle, and the
-default-method pattern for evolving interfaces.
+profile). See [[backward-compatibility]] for the policy, the `@Unstable` lifecycle, the
+default-method pattern for evolving interfaces, and who may use `internal` packages.
 
 ## Suppressing a static-analysis warning
 
