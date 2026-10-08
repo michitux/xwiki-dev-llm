@@ -25,9 +25,12 @@ disclosure ([[security-policy]] in the OKF owns the full rule):
 
 The advisory describes the vulnerability without enabling its reproduction: which feature or
 endpoint is affected, the general attack vector, the requirements (rights, configuration) and the
-impact — but **no PoC**: no exploit request, URL, payload, parameter values or step-by-step
-reproduction, even when the JIRA issue has them (they stay in JIRA, where they're needed for the
-fix). Scanners automatically import published advisories and try the reproduction steps they
+impact — but **no PoC**: no exploit request, URL, page to target, payload, parameter values or
+step-by-step reproduction, even when the JIRA issue has them (they stay in JIRA, where they're needed
+for the fix). General about the mechanism, but **exact about the requirements**: name each right or
+setting the attacker needs (e.g. "edit right on any page and comment right on a page whose author
+has programming right") and say which of them the standard rights give everyone, so an admin with
+non-standard rights can tell whether their wiki is affected. Scanners automatically import published advisories and try the reproduction steps they
 contain. The Security Policy requires this since October 2026: a warning in its "Security Advisory
 template and information" section, and a `/!\ Don't provide reproduction steps. /!\` line under the
 template's `### Impact` — a reminder for the author, not part of the advisory, so leave it out of
@@ -58,7 +61,8 @@ From the response's `fields`, collect:
   (`customfield_11871`); both fields are described in `okf/processes/security-policy.md`.
 - A `customfield_*` holding a `devSummaryJson`/pull-request bean can reveal whether a fix PR/commit
   already exists — useful for the Patches/References sections once a fix lands (remember: the fix
-  commit message will be **obfuscated**, per [[security-policy]], so don't expect the JIRA key in it).
+  commit message keeps the JIRA key but replaces the issue title with a neutral summary, per
+  [[commit-messages]], so don't search it for the title's words).
 
 **If the fetch fails** — no `JIRA_API_TOKEN` set, a network/auth error, or a 404 (which for a
 restricted issue usually means the account behind the token isn't in the security group, not that
@@ -146,7 +150,7 @@ the vector of its own impact in JIRA and gets the advisory link (Step 6).
 | Advisory field | Source |
 |---|---|
 | Title | JIRA `summary` |
-| Impact prose | JIRA `description`'s explanation, rewritten as affected feature + attack vector + requirements + impact + affected versions, in your own words — **without the PoC** (see "No proof of concept in the advisory") and not a verbatim copy-paste of internal notes. Keep the **requirements exact**: name each right or setting the attacker needs (e.g. "edit right on any page and comment right on a page whose author has programming right"), so an admin with non-standard rights can tell whether their wiki is affected, and say which of them standard rights give everyone. Keep the **mechanism general**: name the feature and what goes wrong, but not which page to target, which parameter to set or in which order, since that turns the prose into a PoC. Write each paragraph on one line (the "never hard-wrap prose" rule): GitHub keeps hard line breaks |
+| Impact prose | JIRA `description`'s explanation, rewritten as affected feature + attack vector + requirements + impact + affected versions, in your own words — **without the PoC** (see "No proof of concept in the advisory") and not a verbatim copy-paste of internal notes |
 | CVSS table | The vector found in Step 1, valued per the Step 2 scoring guidance, worded per the Step 3 precedent for the *comment* column |
 | Affected package(s) / vulnerable version range | The module(s) touched, and `versions` (Affects), verified against the code history → GitHub's version-range syntax — see "Affected products (packages) and version ranges" below, which also covers updating JIRA when they differ |
 | Patches | `fixVersions` if the fix isn't released yet ("will be fixed in…"); the actual released versions + patch commit once it is. While `fixVersions` is still empty, take each maintained branch's next release from its root `pom.xml` (`okf/conventions/versioning.md`), and mark them as to be confirmed |
@@ -158,10 +162,8 @@ CWE: pick the closest match from https://cwe.mitre.org/data/index.html — this 
 judgment call, not something to default without reasoning about the actual flaw (e.g. broken access
 control against a user-controlled identifier is usually CWE-639, missing authorization generally is
 CWE-862, XSS is CWE-79, etc.). Check the entry's **Vulnerability Mapping** "Usage" on its MITRE page:
-use an `ALLOWED` (or `ALLOWED-WITH-REVIEW`) entry, never a `DISCOURAGED` or `PROHIBITED` one. Broad
-class entries such as CWE-269 (Improper Privilege Management) are discouraged; pick the Base-level
-child that names the flaw, e.g. CWE-270 (Privilege Context Switching Error) for content executed with
-the wrong author's rights.
+`ALLOWED` or `ALLOWED-WITH-REVIEW` only. Content executed with the wrong author's rights is CWE-270,
+not the discouraged CWE-269.
 
 ### Affected products (packages) and version ranges
 
@@ -256,8 +258,7 @@ not the repository one.
   values (xwiki-jira skill; the field conventions are in `okf/servers/jira.md`), so that JIRA, the
   advisory and the Security Advisory Application agree. The same goes for the CVSS vector and score
   when the advisory's differ from the issue's (fields in `okf/processes/security-policy.md`), and for
-  the **Priority**, which the policy derives from the score (Step 2's "Severity" section: Critical at
-  7 or above, Major below, unless a committer raised it). Without write access
+  the **Priority**, which the policy derives from the score (Step 2's "Severity" section). Without write access
   to JIRA (e.g. no token), tell the user exactly which values to set on which issue instead of
   leaving it silently out of sync.
   Optionally, also link the issue(s) that introduced the vulnerable code: the commits found for the
