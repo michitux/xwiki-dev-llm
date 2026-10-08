@@ -395,9 +395,8 @@ Use the guide for the authoring rules, and that page for what each structure fie
 - **Macros** — use the **code macro with an explicit `language` parameter** for code snippets
   (omitting it is slower and mis-colors). Use the **display macro** to avoid duplicated content: put
   repeated text/steps/images on a single hidden page and display it where needed.
-- **Never hard-wrap prose** — each paragraph and list item is one line, however long; only
-  `{{code}}` blocks keep their line structure. The 120-character limit is for source files
-  ([[code-style]]).
+- **Never hard-wrap prose** — each paragraph and list item is one line; only `{{code}}` blocks keep
+  their line structure.
 - **Do not overuse the em dash (`—`)** — it is not a substitute for a comma, a period, a colon or
   parentheses. Use the mark the sentence actually needs; keep the em dash for a sharp interruption or
   a genuine aside. **Exception:** inside a direct quote, punctuation stays exactly as the quoted
