@@ -1875,17 +1875,12 @@ async function investigate(incident, job, args) {
 /**
  * The regression window of a deep test breakage, walked back past `--history` to its last green.
  *
- * Eight builds is the right depth to rate a flicker and the wrong one to blame a breakage: master
- * builds three or four times a day, so a test broken for two days has no green build left in the
- * window, and "no green build in the fetched history" made it `ambiguous` — no comment, nobody to
- * assign a fix to — exactly while its author could still act on it. `BrowserPDFPrinterTest` sat
- * there from #8989 to #9004 with its last green at #8988, the build before the commit that broke
- * it. Paid only here, for the few incidents that won a deep slot, from the builds Jenkins retains.
+ * Eight builds rate a flicker well and blame a breakage badly: master builds three or four times a
+ * day, so a test broken for two days had no green build left and came back `ambiguous` — nobody
+ * told, nobody to assign a fix to. Builds where none of the tests ran are skipped, as in
+ * `testHistory`.
  *
- * A build in which none of the incident's tests ran says nothing either way and is skipped, as in
- * `testHistory`; the walk stops at the first build in which every one of them that ran passed.
- *
- * @returns {object} the deepened window, or the one the sweep had when the walk found no green
+ * @returns {object} the deepened window, or the sweep's own when the walk finds no green build
  */
 async function deeperTestWindow(incident, job, args) {
   const { window } = incident;
