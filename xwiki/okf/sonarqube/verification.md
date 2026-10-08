@@ -101,12 +101,9 @@ raw arrays are huge.
 The same PR analysis is the only way to check *any* fix against Sonar's own analyzer before merge:
 the plugin has no local Sonar analysis, and a local build runs Checkstyle, not the Sonar rules.
 
-**A PR analysis is only meaningful when its file paths match the branch's.** Run it from the
-repository root on the whole reactor, as the recipe does (`-pl` is refused outright): run from inside a
-module, it records `src/main/java/...` paths that match nothing on the branch, so every line counts as
-new code and the gate fails on years-old findings. A module the branch analysis never builds — one
-declared only under a profile such as `integration-tests` — has no reference either: skip the analysis
-and say why.
+**Run a PR analysis from the repository root, never from inside a module.** Run from a module, it
+records `src/main/java/...` paths that match nothing on the branch, so every line counts as new code and
+the gate fails on years-old findings.
 
 ## Related
 
