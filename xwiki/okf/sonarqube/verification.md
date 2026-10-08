@@ -101,6 +101,10 @@ raw arrays are huge.
 The same PR analysis is the only way to check *any* fix against Sonar's own analyzer before merge:
 the plugin has no local Sonar analysis, and a local build runs Checkstyle, not the Sonar rules.
 
+**Run a PR analysis from the repository root, never from inside a module.** Run from a module, it
+records `src/main/java/...` paths that match nothing on the branch, so every line counts as new code and
+the gate fails on years-old findings.
+
 ## Related
 
 - [[index]] — rule map, denylist, universal drop conditions.
