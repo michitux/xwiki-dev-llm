@@ -121,8 +121,7 @@ def main():
         cached.update(results)
         json.dump(cached, open(args.answers, "w"), indent=1)
         print(f"  {len(results)} scored, {len(errors)} failed, "
-              f"{usage['input_tokens']} input tokens"
-              + (f", ${usage['cost_usd']:.2f}" if usage.get("cost_usd") else ""))
+              f"{usage['input_tokens']} input tokens")
         for key, msg in errors[:3]:
             print(f"    {key}: {msg}")
     rows = [r for r in rows if r["key"] in cached]

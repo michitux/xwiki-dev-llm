@@ -102,8 +102,7 @@ def main():
 
     elapsed = time.time() - started
     print(f"\nScored {len(results)} in {elapsed:.0f}s → {args.outfile} ({len(cache)} total)")
-    print(f"  tokens: {usage['input_tokens']} in / {usage['output_tokens']} out"
-          + (f" · ${usage['cost_usd']:.2f}" if usage.get("cost_usd") else ""))
+    print(f"  tokens: {usage['input_tokens']} in / {usage['output_tokens']} out")
     if errors:
         print(f"  {len(errors)} failed (re-run to retry them):")
         for key, msg in errors[:5]:

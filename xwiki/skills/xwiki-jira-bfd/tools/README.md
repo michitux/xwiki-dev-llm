@@ -63,7 +63,7 @@ Every step checkpoints there, so the pipeline is resumable, and `score_issues.py
 
 ```bash
 python3 eval/backtest.py                  # jev
-python3 eval/backtest.py --judge claude   # Claude (about $15 for the full set)
+python3 eval/backtest.py --judge claude   # Claude
 python3 eval/fetch_labeled.py             # rebuild eval/labeled.json from JIRA history
 python3 eval/fetch_closed_targets.py      # rebuild eval/closed_targets.json
 ```

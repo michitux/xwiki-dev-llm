@@ -172,9 +172,9 @@ fixed it. Against any closed target it no longer says "follow X for updates".
 answer shape. Its probabilities are not jev's, so its bars are measured separately, and
 `triage.JUDGES` lists, per judge and exact model, the close resolutions it passed for.
 
-**claude-sonnet-5**, 2026-09-24, on the same 360 labelled bugs. 348 were scored fresh for
-$13.44, about $0.04 a bug, so a 200-bug cohort costs about $8. The real close rule was
-applied to both judges: the no-fix bar plus the `still_applies_today` guard.
+**claude-sonnet-5**, 2026-09-24, on the same 360 labelled bugs, 348 of them scored fresh.
+The real close rule was applied to both judges: the no-fix bar plus the
+`still_applies_today` guard.
 
 | no-fix bar | jev: bugs, weighted precision | Claude: bugs, weighted precision | committer-fixed bugs selected (jev / Claude) |
 |---|---|---|---|
