@@ -9,11 +9,11 @@ estimate, not a calibrated output, so every threshold measured for jev is invali
 `triage.JUDGES` holds the bars measured for each judge; a judge with none proposes no
 closes at all (see eval/RESULTS.md).
 
-It runs through the `claude` CLI in print mode — the one Claude access every Claude Code
-user already has, whether through a subscription or an API key — with no tools, no MCP
-servers, no settings and a minimal system prompt, so a call costs its own tokens and not
-Claude Code's context. Standard library only, like the rest of the repo; no credential
-passes through this code.
+It runs through the `claude` CLI in print mode with no tools, no MCP servers, no settings
+and a minimal system prompt, so a call costs its own tokens and not Claude Code's context.
+It only runs on the developer's claude.ai login, never on API credits: `claude -p` would
+prefer `ANTHROPIC_API_KEY` (or a cloud provider) over that login, so `_env()` drops them.
+Standard library only, like the rest of the repo; no credential passes through this code.
 """
 
 import json
@@ -28,6 +28,9 @@ MODEL = os.environ.get("CLAUDE_JUDGE_MODEL", "sonnet")
 DEFAULT_WORKERS = 6
 TIMEOUT = 300
 
+_BILLED_AUTH_VARS = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK",
+                     "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY")
+
 SYSTEM_PROMPT = (
     "You are a careful, calibrated classifier for an issue tracker. You receive a JSON "
     "`state` and a list of typed questions about it. Answer every question with "
@@ -38,8 +41,19 @@ SYSTEM_PROMPT = (
 )
 
 
+def _env():
+    return {k: v for k, v in os.environ.items() if k not in _BILLED_AUTH_VARS}
+
+
 def available():
-    return shutil.which("claude") is not None
+    if shutil.which("claude") is None:
+        return False
+    try:
+        proc = subprocess.run(["claude", "auth", "status"], capture_output=True, text=True,
+                              timeout=60, env=_env())
+        return json.loads(proc.stdout or "{}").get("authMethod") == "claude.ai"
+    except (subprocess.TimeoutExpired, json.JSONDecodeError):
+        return False
 
 
 def _schema(questions):
@@ -121,7 +135,7 @@ def ask(state, questions, model=MODEL, retries=3):
     for attempt in range(retries):
         try:
             proc = subprocess.run(cmd, input=_prompt(state, questions), capture_output=True,
-                                  text=True, timeout=TIMEOUT)
+                                  text=True, timeout=TIMEOUT, env=_env())
             out = json.loads(proc.stdout or "{}")
             if out.get("is_error") or not isinstance(out.get("structured_output"), dict):
                 raise RuntimeError((out.get("result") or proc.stderr or "no output")[:200])
@@ -135,8 +149,7 @@ def ask(state, questions, model=MODEL, retries=3):
                 "usage": {"input_tokens": usage.get("input_tokens", 0)
                           + usage.get("cache_read_input_tokens", 0)
                           + usage.get("cache_creation_input_tokens", 0),
-                          "output_tokens": usage.get("output_tokens", 0),
-                          "cost_usd": out.get("total_cost_usd", 0.0)},
+                          "output_tokens": usage.get("output_tokens", 0)},
             }
         except (RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError) as e:
             if attempt == retries - 1:
@@ -152,7 +165,7 @@ def ask_many(items, state_fn, questions_fn, workers=DEFAULT_WORKERS, on_progress
     for item in items:
         work.put(item)
     results, errors = {}, []
-    usage = {"input_tokens": 0, "output_tokens": 0, "cost_usd": 0.0}
+    usage = {"input_tokens": 0, "output_tokens": 0}
     lock = threading.Lock()
 
     def worker():

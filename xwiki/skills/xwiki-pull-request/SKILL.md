@@ -52,6 +52,12 @@ complete every section meaningfully:
   able to judge the result without building the branch. The same images belong on the JIRA issue,
   which is where `okf/servers/jira.md` states the rule and the how — and its attachment URL is what
   the PR body must reference, `gh` being unable to upload an image.
+  - One screenshot of the result is the norm, and is all a new feature or a redesign needs.
+  - Add a **"before"** when the change is a fix to *existing* UI, so the reader can see what was
+    wrong. Usually you can just screenshot the bug on a running instance before applying the fix.
+  - When the branch can **no longer produce** that "before" (the fix is already in the working
+    tree), **propose** the `xwiki-capture-ui-change` skill and run it only on the user's explicit
+    yes. If they decline, ship the "after" alone and say in the PR what the before looked like.
 - **Executed Tests** — how the change was validated (the `mvn` commands run). Especially important
   for regression fixes.
 - **Expected merging strategy** — `Prefers squash: Yes`, and the `Backport on branches:` bullet
@@ -76,7 +82,8 @@ complete every section meaningfully:
 **Run a SonarCloud PR analysis on any PR that changes Java, not only on a Sonar cleanup**, whenever a
 `SONARQUBE_TOKEN` is available. It applies the same quality gate as the branch and is the *only*
 pre-merge check for the rules computed server-side (`javabugs:*` dataflow findings never appear in a
-local build or in the IDE). Run it after `gh pr create`, since it needs the PR number:
+local build or in the IDE). Run it after `gh pr create`, since it needs the PR number, from the
+repository root on the whole reactor:
 
 ```bash
 mvn -B -ntp -T 1C install -DskipTests   # compile only — no tests, no -Pquality, no coverage needed

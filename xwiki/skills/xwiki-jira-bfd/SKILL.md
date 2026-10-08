@@ -31,11 +31,11 @@ threshold.
 2. **Pick the judge**, which answers the typed questions about each bug:
    - `TYPESAFE_TOKEN` (or `TYPESAFE_API_KEY`) set: the judge is **jev**. Say so and go on.
    - Not set: **ask once** before scoring. *"No TypeSafe key. Use Claude as the judge
-     through the `claude` CLI? It costs your Claude usage, measured at about $0.04 a bug to
-     score (so about $8 for 200 bugs), plus a smaller duplicate-selection call per bug. It
-     can propose Cannot Reproduce, Invalid and Won't Fix closes; its Inactive and Duplicate
-     closes come out as suggestions."* On a no, stop: without a judge there is nothing to
-     propose. A host without the `claude` CLI can only use jev.
+     through the `claude` CLI? It uses your claude.ai plan's usage, never API credits:
+     about two calls per bug. It can propose Cannot Reproduce, Invalid and Won't Fix
+     closes; its Inactive and Duplicate closes come out as suggestions."* On a no, stop:
+     without a judge there is nothing to propose. A host without the `claude` CLI logged in
+     to claude.ai can only use jev.
 3. **Scope.** Ask for the cohort and size if the developer did not give them. Default to
    a pilot: `--cohort 5yr --limit 200`. Cohorts are `5yr`, `2yr`, `1yr` and `all`, taken
    oldest first. `--project` defaults to `XWIKI`. Every bar was measured on XWIKI bugs, so

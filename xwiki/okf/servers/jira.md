@@ -47,18 +47,22 @@ A change with no effect on users or extension developers (refactoring, build-onl
 issue; when one is filed anyway it takes the **`Development Issue Only`** component, which is excluded
 from the release notes.
 
-## Issue-field conventions (creating a Bug)
+## Issue-field conventions (every issue type)
 
 These field conventions are **durable**; the version *values* they resolve to are volatile (see
-below). When filing/curating a bug, set:
+below). When filing/curating an issue — Bug, Improvement, New Feature **or Task** — set:
 
 - **Component/s** — always set at least one (e.g. `REST`, `Rendering`, `Platform - …`). Required for
   triage; do not leave empty.
-- **Affects Version/s** — the oldest released version that has the bug, per [[versioning]].
+- **Affects Version/s** — the oldest released version that has the problem, per [[versioning]]; for
+  an Improvement/Task, the first release containing the code it changes.
 - **Fix Version/s** — the version the fix ships in: normally the next release of the current dev
   version. Note the naming: JIRA version names use dashes (e.g. `18.7.0-rc-1`), whereas the source
   `@since` / `@Deprecated(since=…)` tag for the *same* release uses `18.7.0RC1` — see [[versioning]]
   for the tag format. Add the stable-branch fix versions too when the fix is backported.
+- **Issue links** — link every related issue it names (the one that introduced the code involved, the
+  one it follows up on, …) with a real JIRA link, by default **`Related`**; naming it in the
+  description alone does not show up in either issue's links.
 
 These conventions target the core projects (`XWIKI`, `XCOMMONS`, `XRENDERING`). **Some projects
 configure fewer fields** — e.g. `XDOCKER` has **no Component/s, no Affects Version/s and no Fix
@@ -148,12 +152,13 @@ workflow state, and a close may be gated behind an intermediate state.
 
 ## Attachments (screenshots)
 
-**A change with a visible result carries its before/after images on the issue** — a new feature, an
-improvement or a fix alike, and a "before" whenever the issue reports a regression. The issue is what
-whoever writes the release note, or reopens the bug years later, actually reads. This holds
-independently of any pull request: a fix committed straight to `master` has no PR body to show it, and
-is exactly the case where the images are otherwise never captured. Producing them is also the check
-that the change works — a test asserts only what it was written to assert.
+**A change with a visible result carries images of that result on the issue** — a new feature, an
+improvement or a fix alike — **plus a "before" when it fixes existing UI**, a regression included.
+A new feature has no "before" to show. The issue is what whoever writes the release note, or reopens
+the bug years later, actually reads. This holds independently of any pull request: a fix committed
+straight to `master` has no PR body to show it, and is exactly the case where the images are
+otherwise never captured. Producing them is also the check that the change works — a test asserts
+only what it was written to assert.
 
 `jira-cli` has **no `attach` command** — attaching is REST-only, and Atlassian requires the
 `X-Atlassian-Token: no-check` header on multipart uploads:

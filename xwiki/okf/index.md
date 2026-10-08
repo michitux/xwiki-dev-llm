@@ -89,7 +89,8 @@ in the topic file. Read the entry to choose, then read the file — never act on
 - **solr-search** — XWiki's Solr backend, and what running it against a remote Solr requires.
 
 ### testing/
-- **strategy** — the kinds of test XWiki has, how they are named, and the rules a test must satisfy.
+- **strategy** — the kinds of test XWiki has, how they are named, the rules a test must satisfy, and
+  the layout of a feature's functional-test modules.
   Procedures live in the test skills.
 - **running-docker-its** — running the Docker functional tests on a developer machine: container
   networking, setup failures, leftover containers and networks (ryuk), what parallel runs contend
@@ -137,8 +138,8 @@ each grounded in a cited source. `_template.md` holds the format and the groundi
 
 `xwiki-build`, `xwiki-pull-request`, `xwiki-javadoc`, `xwiki-test-guidelines`, `xwiki-convert-tests`,
 `xwiki-convert-tests-docker`, `xwiki-fix-flickering-docker-test`, `xwiki-increase-test-coverage`,
-`xwiki-legacy`, `xwiki-fix-deprecation`, `xwiki-deploy-extension`, `xwiki-rest-api`, `xwiki-xar-pages`, `xwiki-doc-writing`, `xwiki-doc-convert`, `xwiki-doc-export`, `xwiki-translations`,
-`xwiki-contrib-release-blog-post`, `xwiki-fix-sonarqube-issue`, `xwiki-backport`,
+`xwiki-legacy`, `xwiki-fix-deprecation`, `xwiki-deploy-extension`, `xwiki-capture-ui-change`, `xwiki-rest-api`, `xwiki-xar-pages`, `xwiki-doc-writing`, `xwiki-doc-convert`, `xwiki-doc-export`, `xwiki-translations`,
+`xwiki-contrib-release`, `xwiki-contrib-release-blog-post`, `xwiki-fix-sonarqube-issue`, `xwiki-backport`,
 `xwiki-backport-testneeded`, `xwiki-jira`, `xwiki-jira-bfd`, `xwiki-security-advisory`, `xwiki-openproject`,
 `xwiki-release-test-triage`, `xwiki-ci-check`, `xwiki-release-documentation`, `xwiki-review`,
 `xwiki-presentation`.

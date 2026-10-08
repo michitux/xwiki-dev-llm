@@ -8,8 +8,9 @@ summary: The kinds of tests XWiki uses, their naming, the no-stdout rule, the pr
   page-object boundary (a test holds no HTML/JS knowledge: no getDriver(), selector or WebElement),
   page-object actions that wait for their own outcome,
   the don't-pay-the-timeout rule, how to read a PRChecker log line and how to grant Programming
-  Rights to a test's own content, asserting whose rights code runs with,
-  the bare @UITest on an AllIT container, getting a mandatory class in an
+  Rights to a test's own content, asserting whose rights code runs with, the assertion channel
+  (browser vs REST), the bare @UITest on an AllIT container, the functional-test module layout
+  (which pom lists which module under which profile, the -test-docker pom), getting a mandatory class in an
   @OldcoreTest, MockitoOldcore's save authors, mocking a raw injected Provider, coverage, and where
   each test framework lives. Procedures live in the test skills.
 sources:
@@ -97,6 +98,13 @@ This is the declarative map of how testing works in XWiki. For **doing** the wor
   the wait belongs in that method. The test waits only for what the page object cannot know, such as
   content specific to the test, and it is not always possible (a modal shared by several editors
   cannot wait for one editor's refresh).
+- **Assert through the channel that matches what is checked** — what the *user* sees (rendered
+  content, an error message, an image, a button's state) goes through the browser and page objects
+  (`ViewPage#getContent`, `BasePage#hasRenderingError`); data no user looks at in the UI (a
+  document's authors, a REST resource) goes through `setup.rest()` or `TestUtils#getString`, which
+  skip the page load. `executeAndGetBodyAsString` is not that shortcut: it drives the browser too.
+  `ViewPage` (`BasePage`) already waits for the window `load` event and every pending request, so
+  images in the content are loaded — don't add a wait of your own for that.
 - **Don't pay the timeout (Docker functional tests)** — a test must never burn the full Selenium
   wait timeout waiting for something that will not appear. The waiting APIs (`findElement`,
   `findElements`, and the `waitUntil…` helpers) are for elements *expected to be present*; to assert
@@ -139,7 +147,10 @@ This is the declarative map of how testing works in XWiki. For **doing** the wor
   (`ExtensionContextTestConfigurationResolver`). So `properties`, `extraJARs` and the rest declared
   on an individual `*IT` class already apply when it runs nested: repeating them on the container is
   redundant, and repeating a scalar (`browser`, `database`, `servletEngine`, …) that a nested class
-  also sets aborts the run with a `DockerTestException` as soon as the two values differ.
+  also sets aborts the run with a `DockerTestException` as soon as the two values differ. **Every
+  nested test class carries its own `@UITest` too**, bare or with the configuration it needs.
+  `xwiki-platform-rest-test-docker` deliberately leaves its classes unannotated: an exception, not a
+  template.
 - **Every functional test method carries `@Order`, in source order** — give each `@Test` of a
   `@UITest` class an `@Order(n)`, even when it is the only one, so the next method added gets
   `@Order(n+1)` rather than none. `@UITest` uses `MethodOrderer.OrderAnnotation`, under which methods
@@ -167,6 +178,40 @@ This is the declarative map of how testing works in XWiki. For **doing** the wor
   skill as part of any unit-test change: it raises the module pom's `xwiki.jacoco.instructionRatio`
   when the achieved ratio has grown, and otherwise guides adding the missing tests. (The mvn command
   lives in the skill.)
+
+## Functional-test module layout
+
+**Follow these conventions even if the examples you find don't** — many modules predate one rule or
+another, and copying the nearest example is how the deviations spread.
+
+A feature's functional tests live in that feature's own test modules, created next to it when it
+has none yet — not in an unrelated module because it already exists
+(`xwiki-platform-flamingo-skin-test-docker` in particular is already far too big).
+
+```
+xwiki-platform-<feature>/
+  pom.xml                       ← lists -test only under the integration-tests profile
+  xwiki-platform-<feature>-test/
+    pom.xml                     ← packaging pom; -test-pageobjects in <modules>, -test-docker under docker
+    xwiki-platform-<feature>-test-pageobjects/   ← jar on xwiki-platform-test-ui; only when a page object is needed
+    xwiki-platform-<feature>-test-docker/
+      src/test/it/…/{AllIT,FeatureIT}.java
+      src/test/resources/…      ← optional (XAR packages, …)
+      src/test/webapp/…         ← optional files overlaid onto the test WAR
+```
+
+- **The `-test` parent** sets `xwiki.revapi.skip` and `xwiki.checkstyle.skip` to `true`: test
+  modules are not API.
+- **The `-test-docker` pom** — `jar` packaging, `<testSourceDirectory>src/test/it</testSourceDirectory>`,
+  `maven-failsafe-plugin` declared in `<build><plugins>`, `xwiki.surefire.captureconsole.skip` set to
+  `true`, test-scoped dependencies on `xwiki-platform-test-docker` and the feature's
+  `-test-pageobjects`, the modules under test as ordinary runtime dependencies (the framework
+  installs them as extensions; `extraJARs` is a last resort), and the `clover` profile copied from a
+  sibling module.
+- **`AllIT`** is the only class failsafe runs (`**/AllIT.java`, set by the `xwiki-commons` parent):
+  it lists every test class as a `@Nested` subclass so XWiki starts once. `@UITest` placement: the
+  `AllIT` rule above.
+- **`@since`** goes on page objects, never on test classes: `conventions/versioning.md`.
 
 ## Where the test frameworks live (per repo checkout)
 
