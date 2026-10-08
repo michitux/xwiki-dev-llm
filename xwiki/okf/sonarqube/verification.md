@@ -101,15 +101,12 @@ raw arrays are huge.
 The same PR analysis is the only way to check *any* fix against Sonar's own analyzer before merge:
 the plugin has no local Sonar analysis, and a local build runs Checkstyle, not the Sonar rules.
 
-**A PR analysis is only meaningful for files the branch analysis already has.** Run it from the
-repository root on the whole reactor, as the recipe does: the scanner refuses `-pl` ("Maven session
-does not declare a top level project"), and running it from inside a module records module-relative
-paths (`src/main/java/...`) that match nothing on the branch — every line of every file then counts as
-new code, and the gate fails on years-old findings. For the same reason, a module the branch analysis
-never builds (e.g. one only declared under the `integration-tests` profile, like
-`xwiki-platform-test-docker`) gets no usable PR analysis: check first that the branch knows it
-(`components/tree?component=$SONARQUBE_PROJECT_KEY&qualifiers=DIR&q=<module>` returns nothing
-otherwise), and skip the analysis, saying why, when it doesn't.
+**A PR analysis is only meaningful when its file paths match the branch's.** Run it from the
+repository root on the whole reactor, as the recipe does (`-pl` is refused outright): run from inside a
+module, it records `src/main/java/...` paths that match nothing on the branch, so every line counts as
+new code and the gate fails on years-old findings. A module the branch analysis never builds — one
+declared only under a profile such as `integration-tests` — has no reference either: skip the analysis
+and say why.
 
 ## Related
 
