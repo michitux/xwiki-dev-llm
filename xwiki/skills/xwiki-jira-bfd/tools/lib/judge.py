@@ -30,7 +30,7 @@ def resolve(name=None):
     if name == "jev" and not has_jev_key():
         raise SystemExit("Judge 'jev' needs TYPESAFE_TOKEN (or TYPESAFE_API_KEY).")
     if name == "claude" and not claude_judge.available():
-        raise SystemExit("Judge 'claude' needs the `claude` CLI on PATH.")
+        raise SystemExit("Judge 'claude' needs the `claude` CLI logged in to claude.ai.")
     return name
 
 
