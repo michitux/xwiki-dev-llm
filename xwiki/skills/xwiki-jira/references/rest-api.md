@@ -98,6 +98,20 @@ curl -s -w '\n%{http_code}\n' -X PUT \
   "https://jira.xwiki.org/rest/api/2/issue/XWIKI-12345"
 ```
 
+## Link two issues
+
+The link types are `Related` (relates to), `Causality` (causes / is caused by), `Dependency`
+(blocks / depends on) and `Duplicate`; `GET /rest/api/2/issueLinkType` lists them. Returns **201**:
+
+```bash
+curl -s -w '\n%{http_code}\n' -X POST \
+  -H "Authorization: Bearer $JIRA_API_TOKEN" -H "Content-Type: application/json" \
+  -d '{"type":{"name":"Related"},"inwardIssue":{"key":"XWIKI-12345"},"outwardIssue":{"key":"XWIKI-12000"}}' \
+  https://jira.xwiki.org/rest/api/2/issueLink
+```
+
+Read the issue back with `fields=issuelinks` to check the link.
+
 ## Add a comment
 
 Unlike jira-cli (which Markdown-converts the body), REST stores the body **verbatim** — send JIRA
