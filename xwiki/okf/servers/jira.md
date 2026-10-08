@@ -59,6 +59,9 @@ below). When filing/curating a bug, set:
   version. Note the naming: JIRA version names use dashes (e.g. `18.7.0-rc-1`), whereas the source
   `@since` / `@Deprecated(since=…)` tag for the *same* release uses `18.7.0RC1` — see [[versioning]]
   for the tag format. Add the stable-branch fix versions too when the fix is backported.
+- **Issue links** — link every related issue it names (the one that introduced the code involved, the
+  one it follows up on, …) with a real JIRA link, by default **`Related`**; naming it in the
+  description alone does not show up in either issue's links.
 
 These conventions target the core projects (`XWIKI`, `XCOMMONS`, `XRENDERING`). **Some projects
 configure fewer fields** — e.g. `XDOCKER` has **no Component/s, no Affects Version/s and no Fix
