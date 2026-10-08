@@ -125,7 +125,11 @@ session, so the first window printed drains it.
 logs `Failed to get browser console logs` instead and keeps only the `REALTIME_DEBUG` dump. The
 docker test framework enables that log on Chrome for every test (`Browser.java`), but nothing else
 reads it, so CI records no console for any other test; a temporary patch can read it in a local
-Chrome run. To see the browser side of a race in any browser, push entries (with
-`performance.now()`) into a `window` array from a temporary patch and read it back through
-`executeScript`. The log contains stray `\r`: line numbers from
-`grep -n` do not match a reader that splits on `\r`.
+Chrome run.
+
+- **A browser-side timeline in any browser:** push entries (with `Date.now()`, not
+  `performance.now()`, which counts from each tab's own start) into a `window` array from a
+  temporary patch and read it back through `executeScript`: wall-clock times merge with the other
+  tabs, the server log and the test log into one timeline.
+- **The console log contains stray `\r`:** line numbers from `grep -n` do not match a reader that
+  splits on `\r`.
