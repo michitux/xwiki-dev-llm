@@ -25,8 +25,10 @@ the mechanics here), **xwiki-build** (Maven), **xwiki-pull-request** (PR/commit 
   landed **after** B was cut **and** is **not** already released on B's line. (Do not hardcode which
   branches are supported — that changes every release; ask or infer from the last patch release of
   each active line.)
-- **The target branch's version**, read from its root `pom.xml` `<version>` (e.g.
-  `17.10.10-SNAPSHOT`). Needed for the pom-version check (§3.A) and the `@since` adjustment (§3.D).
+- **The target branch's version**, read from its root `pom.xml` `<version>` on `origin/<branch>`
+  after a fetch (e.g. `17.10.10-SNAPSHOT`) — never derived from local tags, which go stale; see
+  `okf/conventions/versioning.md`. Needed for the pom-version check (§3.A) and the `@since` adjustment
+  (§3.D).
 - **The target branch's Java level.** It depends on the XWiki version and differs across lines (newer
   lines use newer JDKs). Do NOT hardcode — resolve it from the version via the Java Support Strategy
   (linked from the org instructions / `dev.xwiki.org`), or read the branch's effective build config.
@@ -138,9 +140,9 @@ Backporting **adds** `@since` lines, it never replaces the existing ones. Two th
   backport); if the source's block is missing a line, fix it there too (a separate `@since` commit /
   PR on the source branch) — otherwise the branches drift.
 
-Decide the lines **empirically**, one per version-line, **ascending** by version number: inspect what
-each branch already carries (`git show origin/<branch>:<path>` for the file) and add only the missing
-lines. **Never invent an `@since`** where the source code did not already have one.
+Decide the lines **empirically**, one per version-line: inspect what each branch already carries
+(`git show origin/<branch>:<path>` for the file) and add only the missing lines, keeping the block's
+existing order. **Never invent an `@since`** where the source code did not already have one.
 
 For the exact format and *which elements* carry `@since` (reusable classes/members — `internal` ones
 and test tools such as page objects and test frameworks included — versus the tests themselves, which

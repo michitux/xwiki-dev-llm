@@ -81,7 +81,7 @@ per `okf/servers/jira.md`. Pass `--no-input` only when every required field is s
    **Fix Version/s**. Write the description in JIRA wiki markup, explaining the *user-visible* problem,
    and send it over REST (see the gotcha above).
 3. Show the user the drafted summary + description + fields, then create.
-4. Report the created key and URL.
+4. Link the related issues (see `okf/servers/jira.md`), then report the created key and URL.
 
 **Updating an issue:**
 1. **Fetch the issue first** — never assume its current status, assignee or field values.

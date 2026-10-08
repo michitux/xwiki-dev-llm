@@ -36,8 +36,8 @@ follows.
   `XCOMMONS-…`, `XRENDERING-…`, etc.). What *this* commit does goes in the body as `*` bullets.
 - Use `[Misc]` only for trivial changes with no issue; anything affecting users or extension
   developers needs an issue. Full rule: `okf/conventions/commit-messages.md`.
-- **A change with a visible result carries before/after images** — on its JIRA issue, and in the PR
-  body when there is one. Producing them is also how you check it works: `okf/servers/jira.md`.
+- **A visible change carries images, plus a "before" for a UI fix** — on its JIRA issue, and in
+  its PR body if any. Producing them is also how you check it works: `okf/servers/jira.md`.
 
 ## Building & tests
 
@@ -54,8 +54,8 @@ follows.
 
 ## Code conventions
 
-- **Lines must not exceed 120 characters** — that is a rule about *source*. Never hard-wrap prose:
-  a paragraph on an xwiki.org page, a forum post or a GitHub PR/advisory body is one unbroken line.
+- **Lines must not exceed 120 characters** — in source files only. Never hard-wrap prose elsewhere
+  (commits, JIRA, xwiki.org, forum, Matrix, GitHub): a paragraph or list item is one line.
 - LGPL license headers are required on every source file — run `mvn license:format -B -ntp` to add
   missing headers.
 - In new code, prefer the `jakarta.*` namespaces over `javax.*` (the project is migrating

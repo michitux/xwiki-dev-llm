@@ -119,7 +119,7 @@ together.
 |---|---|
 | `class` / `kind` | 1 `test-breakage`/`flicker`, 2 `build-break`/`unclassified`, 3 `infra`, 4 `timeout`, 5 `absence` |
 | `state` | `systematic`, `intermittent`, `single env`, `first seen`, the infra pattern, `absent` |
-| `ageDays`, `ageIsLowerBound` | days since the first bad build; `≥` when the history ran out first. The **current streak** in the builds Jenkins retains — `develocity.firstSeen` is when the failure started |
+| `ageDays`, `ageIsLowerBound` | days since the first bad build; `≥` when the history ran out first. The **current streak** in the builds Jenkins retains — `develocity.firstSeen` is when the failure started. A `deep` test breakage is walked back to its last green over everything Jenkins retains (`--blame-history`) |
 | `beyondHorizon` | older than 7 days ⇒ **no write of any kind**, digest only |
 | `blame.tier` | `certain` \| `likely` \| `ambiguous` \| `none` \| `unknown` |
 | `fixState` | something already answers this incident — `fix-unbuilt` a commit CI has not built yet, `fix-in-flight` an open PR, `stale-snapshot` the job ran new test code against older jars, `announced` the room was told this failure was coming, `being-handled` somebody has said they are on it, `fixed-elsewhere` the same failure is green again on another branch ⇒ **one line, no analysis, no write** |
@@ -434,12 +434,25 @@ when none of that is open, never instead of it. `summary.stabilise.blockers` is 
 | Tier | What | PR |
 |---|---|---|
 | **A — mechanical** | License headers, a Checkstyle violation the error localises exactly (line > 120 chars, unused import, whitespace, missing newline), a trivially broken compile after a rename | ready for review |
+| **A — additive** | A failing coverage check whose `blame.tier` is `certain` or `likely`: add the missing unit tests (`xwiki-increase-test-coverage`). **Never lower the ratio or edit an existing test** | **draft** — new tests are code the culprit, who is usually already writing them, has to judge |
 | **B — inferred** | A UI change renamed a selector and the page object still queries the old one; renamed or moved test resources | **draft** |
-| **C — never** | Changing an assertion, an expected value, a timeout, or any production logic | — |
+| **B — follows the culprit** | A *unit* test still expecting a value the culprit commit's own diff changed — see below | **draft** |
+| **C — never** | Changing an assertion, an expected value, a timeout, or any production logic — except the row above | — |
 
 **Tier C is a safety rule, not a limit on capability.** A failing assertion is the hypothesis that
 the product is wrong; "fixing" it by editing the expectation launders a real regression into a green
 build. If a fix seems to need an assertion change, that is a comment to a human, not a PR.
+
+**"Follows the culprit" is that comment, made answerable in one click.** A commit changes what a
+method returns (an empty array instead of `null`, say) and a unit test still stubs or expects the
+old value: a one-line fix, unless a caller treats the two differently and the line hides the
+regression — which only the author knows. So the PR asks, and only when all of these hold:
+
+- `blame.tier` is `certain` or `likely` — no culprit, no question to ask;
+- it is a **unit** test — a functional test asserts what a user sees (`okf/testing/strategy.md`);
+- the test change mirrors one line of the culprit's diff, quoted in the body, and nothing else;
+- the body opens with: *"`<sha>` changed `<what>` from `<old>` to `<new>` and `<test>` still
+  expects `<old>`. If intended, merge this; if not, close it — the bug is in `<sha>`."*
 
 Verify before opening, always, and **fail closed** — if verification fails there is no PR, and the
 attempted fix goes into the paste instead:

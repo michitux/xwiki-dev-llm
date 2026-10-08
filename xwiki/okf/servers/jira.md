@@ -47,18 +47,22 @@ A change with no effect on users or extension developers (refactoring, build-onl
 issue; when one is filed anyway it takes the **`Development Issue Only`** component, which is excluded
 from the release notes.
 
-## Issue-field conventions (creating a Bug)
+## Issue-field conventions (every issue type)
 
 These field conventions are **durable**; the version *values* they resolve to are volatile (see
-below). When filing/curating a bug, set:
+below). When filing/curating an issue — Bug, Improvement, New Feature **or Task** — set:
 
 - **Component/s** — always set at least one (e.g. `REST`, `Rendering`, `Platform - …`). Required for
   triage; do not leave empty.
-- **Affects Version/s** — the oldest released version that has the bug, per [[versioning]].
+- **Affects Version/s** — the oldest released version that has the problem, per [[versioning]]; for
+  an Improvement/Task, the first release containing the code it changes.
 - **Fix Version/s** — the version the fix ships in: normally the next release of the current dev
   version. Note the naming: JIRA version names use dashes (e.g. `18.7.0-rc-1`), whereas the source
   `@since` / `@Deprecated(since=…)` tag for the *same* release uses `18.7.0RC1` — see [[versioning]]
   for the tag format. Add the stable-branch fix versions too when the fix is backported.
+- **Issue links** — link every related issue it names (the one that introduced the code involved, the
+  one it follows up on, …) with a real JIRA link, by default **`Related`**; naming it in the
+  description alone does not show up in either issue's links.
 
 These conventions target the core projects (`XWIKI`, `XCOMMONS`, `XRENDERING`). **Some projects
 configure fewer fields** — e.g. `XDOCKER` has **no Component/s, no Affects Version/s and no Fix
@@ -148,12 +152,13 @@ workflow state, and a close may be gated behind an intermediate state.
 
 ## Attachments (screenshots)
 
-**A change with a visible result carries its before/after images on the issue** — a new feature, an
-improvement or a fix alike, and a "before" whenever the issue reports a regression. The issue is what
-whoever writes the release note, or reopens the bug years later, actually reads. This holds
-independently of any pull request: a fix committed straight to `master` has no PR body to show it, and
-is exactly the case where the images are otherwise never captured. Producing them is also the check
-that the change works — a test asserts only what it was written to assert.
+**A change with a visible result carries images of that result on the issue** — a new feature, an
+improvement or a fix alike — **plus a "before" when it fixes existing UI**, a regression included.
+A new feature has no "before" to show. The issue is what whoever writes the release note, or reopens
+the bug years later, actually reads. This holds independently of any pull request: a fix committed
+straight to `master` has no PR body to show it, and is exactly the case where the images are
+otherwise never captured. Producing them is also the check that the change works — a test asserts
+only what it was written to assert.
 
 `jira-cli` has **no `attach` command** — attaching is REST-only, and Atlassian requires the
 `X-Atlassian-Token: no-check` header on multipart uploads:
@@ -173,10 +178,9 @@ hosted one since `gh` cannot upload: attach to the issue first, then link it fro
 Both descriptions and comments use the **JIRA wiki renderer**. Governing rule: **pick the right
 container, escape only *active* markup — never over-escape, and never escape inside code blocks.**
 
-- **Literals → monospace.** Wrap identifiers, flags, filenames and short commands in `{{…}}` (e.g.
-  `{{JAVA_OPTS}}`, `{{-e JAVA_OPTS="-Dhttp.proxyHost=…"}}`). It reads as code and removes any need to
-  escape the punctuation inside — the preferred style, cleaner than backslash-escaping. **Exception:
-  issue keys** — never monospace them (see below).
+- **Literals → monospace.** Anything that is not prose — an identifier, flag, path, command, or a
+  snippet of any syntax (XWiki, Velocity, XML, shell) — goes in `{{…}}` (e.g. `{{JAVA_OPTS}}`,
+  `{{$doc.display("x")}}`). **Exception: issue keys** — never monospace them (see below).
 - **Do not over-escape prose.** Most punctuation is already literal: `-`, `(`, `)`, `.`, `/`, `:`, and
   an underscore **inside a word** (`JAVA_OPTS` renders fine — `_italic_` only triggers at word
   boundaries). A backslash is only needed to stop *active* markup: line-leading `*`/`#`/`-` (lists),
@@ -188,10 +192,12 @@ container, escape only *active* markup — never over-escape, and never escape i
 - **Never escape inside `{code}` / `{noformat}` blocks.** Their content is literal, so a backslash
   added to "escape" markup renders as a **visible backslash** (`\- JAVA\_OPTS=…` shows the `\-`/`\_`).
   Put the **raw** snippet in the block; escaping is a *prose* concern only.
-- **`{{monospace}}` specifics.** It preserves angle brackets (`{{<version>/solr/}}` → `<version>/solr/`),
-  so short `<…>` tokens are fine inline — but it must not be glued to an adjacent word character:
-  `{{curl}}s` fails to parse and renders literally as `{{curl}}s` (add a space or reword). For
-  multi-line commands or `sed`/XML/YAML, use a `{code}`/`{noformat}` block (raw), as good descriptions do.
+- **`{{…}}` is a style, not a raw container.** JIRA markup inside it still renders (`{{_foo_}}` comes
+  out italic, `{{[x]}}` as a broken link), so backslash-escape it there (`{{\_foo\_}}`). Angle brackets
+  survive (`{{<version>/solr/}}`). It must not be glued to a word character: `{{curl}}s` renders
+  literally (add a space or reword).
+- **A literal spanning lines or containing `{{`/`}}` goes in a `{code}`/`{noformat}` block** (raw),
+  even a one-line XWiki macro: no escaping keeps `{{velocity}}` intact inside `{{…}}`.
 
 **Editing a comment** (e.g. to fix a mis-rendered one) is REST-only — `jira-cli` cannot edit
 comments: `PUT /rest/api/2/issue/{KEY}/comment/{ID}` with JSON `{"body": "…"}`. **Verify** afterwards

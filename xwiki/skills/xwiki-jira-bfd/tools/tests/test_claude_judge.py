@@ -3,6 +3,7 @@
 import os
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lib"))
 import claude_judge  # noqa: E402
@@ -47,6 +48,16 @@ class TestToAnswers(unittest.TestCase):
         a = claude_judge.to_answers({"same_problem": {"XWIKI-1": 0.3, "none": 0.3,
                                                       "XWIKI-666": 0.9}}, qs)
         self.assertNotIn("XWIKI-666", jev.choice(a, "same_problem")[1])
+
+
+class TestBilling(unittest.TestCase):
+    def test_the_child_never_sees_a_per_token_billing_credential(self):
+        billed = {"ANTHROPIC_API_KEY": "k", "CLAUDE_CODE_USE_BEDROCK": "1"}
+        with mock.patch.dict(os.environ, billed):
+            env = claude_judge._env()
+        self.assertNotIn("ANTHROPIC_API_KEY", env)
+        self.assertNotIn("CLAUDE_CODE_USE_BEDROCK", env)
+        self.assertIn("PATH", env)
 
 
 if __name__ == "__main__":

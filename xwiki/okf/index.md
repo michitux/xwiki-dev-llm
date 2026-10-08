@@ -49,10 +49,10 @@ in the topic file. Read the entry to choose, then read the file — never act on
 - **dependencies** — the checklist a third-party project must pass before a distribution depends on
   it; and upgrading a JavaScript one, whose lockfile the build's pinned pnpm rewrites.
 - **commit-messages** — the format of a commit summary and body, and when `[Misc]` is allowed.
-- **versioning** — which version string `@since` and `@Deprecated(since=…)` take, and an issue's
-  affected version (JIRA and OpenProject).
+- **versioning** — which version string `@since` and `@Deprecated(since=…)` take, the version a
+  change ships in on another branch, and an issue's affected version (JIRA and OpenProject).
 - **backward-compatibility** — what a public API may change, what Revapi checks, the `@Unstable`
-  lifecycle, and evolving an interface with default methods.
+  lifecycle, evolving an interface with default methods, and who may use `internal` packages.
 - **security** — writing scripts, templates and queries safely: escaping, untrusted input, the rights
   a script runs with and how to check them, injection, parsing XML.
 - **script-services** — how a script service reports an error (it throws, the caller uses `#try()`;
@@ -89,7 +89,8 @@ in the topic file. Read the entry to choose, then read the file — never act on
 - **solr-search** — XWiki's Solr backend, and what running it against a remote Solr requires.
 
 ### testing/
-- **strategy** — the kinds of test XWiki has, how they are named, and the rules a test must satisfy.
+- **strategy** — the kinds of test XWiki has, how they are named, the rules a test must satisfy, and
+  the layout of a feature's functional-test modules.
   Procedures live in the test skills.
 - **running-docker-its** — running the Docker functional tests on a developer machine: container
   networking, setup failures, leftover containers and networks (ryuk), what parallel runs contend
@@ -137,8 +138,8 @@ each grounded in a cited source. `_template.md` holds the format and the groundi
 
 `xwiki-build`, `xwiki-pull-request`, `xwiki-javadoc`, `xwiki-test-guidelines`, `xwiki-convert-tests`,
 `xwiki-convert-tests-docker`, `xwiki-fix-flickering-docker-test`, `xwiki-increase-test-coverage`,
-`xwiki-legacy`, `xwiki-fix-deprecation`, `xwiki-deploy-extension`, `xwiki-rest-api`, `xwiki-xar-pages`, `xwiki-doc-writing`, `xwiki-doc-convert`, `xwiki-doc-export`, `xwiki-translations`,
-`xwiki-contrib-release-blog-post`, `xwiki-fix-sonarqube-issue`, `xwiki-backport`,
+`xwiki-legacy`, `xwiki-fix-deprecation`, `xwiki-deploy-extension`, `xwiki-capture-ui-change`, `xwiki-rest-api`, `xwiki-xar-pages`, `xwiki-doc-writing`, `xwiki-doc-convert`, `xwiki-doc-export`, `xwiki-translations`,
+`xwiki-contrib-release`, `xwiki-contrib-release-blog-post`, `xwiki-fix-sonarqube-issue`, `xwiki-backport`,
 `xwiki-backport-testneeded`, `xwiki-jira`, `xwiki-jira-bfd`, `xwiki-security-advisory`, `xwiki-openproject`,
 `xwiki-release-test-triage`, `xwiki-ci-check`, `xwiki-release-documentation`, `xwiki-review`,
 `xwiki-presentation`.
