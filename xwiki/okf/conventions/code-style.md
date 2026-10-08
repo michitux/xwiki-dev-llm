@@ -16,7 +16,8 @@ authoritative source of truth.
 
 ## Formatting
 
-- **Lines must not exceed 120 characters.** This is enforced by Checkstyle in the `quality` profile.
+- **Lines must not exceed 120 characters** in source files — enforced by Checkstyle in the `quality`
+  profile. Prose outside source files is never hard-wrapped (`instructions/xwiki-org.md`).
 - **LGPL license headers** are required on **every** file, configuration files included (validated by
   `license-maven-plugin`). Add missing headers with `mvn license:format -B -ntp`. The comment syntax
   depends on the file type: `/* … */` for Java & JavaScript, `<!-- … -->` for XML & Vue, `#` for shell
