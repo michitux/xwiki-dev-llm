@@ -47,14 +47,15 @@ A change with no effect on users or extension developers (refactoring, build-onl
 issue; when one is filed anyway it takes the **`Development Issue Only`** component, which is excluded
 from the release notes.
 
-## Issue-field conventions (creating a Bug)
+## Issue-field conventions (every issue type)
 
 These field conventions are **durable**; the version *values* they resolve to are volatile (see
-below). When filing/curating a bug, set:
+below). When filing/curating an issue — Bug, Improvement, New Feature **or Task** — set:
 
 - **Component/s** — always set at least one (e.g. `REST`, `Rendering`, `Platform - …`). Required for
   triage; do not leave empty.
-- **Affects Version/s** — the oldest released version that has the bug, per [[versioning]].
+- **Affects Version/s** — the oldest released version that has the problem, per [[versioning]]; for
+  an Improvement/Task, the first release containing the code it changes.
 - **Fix Version/s** — the version the fix ships in: normally the next release of the current dev
   version. Note the naming: JIRA version names use dashes (e.g. `18.7.0-rc-1`), whereas the source
   `@since` / `@Deprecated(since=…)` tag for the *same* release uses `18.7.0RC1` — see [[versioning]]
