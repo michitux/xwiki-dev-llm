@@ -131,7 +131,7 @@ the same check.
 the code runs for — check for `null` first. Guest needs no special case: it serializes to `null`,
 the only `DocumentReference` for guest (`XWiki.XWikiGuest` is deprecated).
 
-## Rendering another document — isolate it; the caller's restricted flag stays behind
+## Rendering another document — isolate it
 
 Code that renders the content of **another** document (through `DocumentDisplayer`, like the display
 macro does) must set `DocumentDisplayerParameters#setExecutionContextIsolated(true)`. Pushing the
@@ -140,17 +140,12 @@ document into the context removes the inherited secure document (`sdoc`), so its
 the *calling* document, and a user who can edit the displayed document gets the caller's author's
 rights.
 
-Restricted mode (`TransformationContext#isRestricted`, set for comments and other content whose
-author can't be trusted) is about the content being rendered *in* that context. A document displayed
-in an isolated context is not that content: it runs with its own author's rights, exactly as when the
-current user views it (so check the current user's view right on it). The restricted flag of the
-caller is therefore **not** propagated to it. The display macro doesn't, by design (see the discussion
-in XWIKI-20394). A document that is itself restricted is still rendered restricted
-(`DocumentContentAsyncRenderer`). The flag does need propagating when content is rendered in the
-*current* context, e.g. a non-isolated include, which is why the include macro passes it on.
-
-Take this from the code and from committers' comments, not from an unconfirmed report that calls
-the missing propagation a vulnerability.
+Don't propagate the caller's restricted flag (`TransformationContext#isRestricted`) to an isolated
+document: it runs with its own author's rights, as when the current user views it, so check the
+current user's view right on it instead. This is by design in the display macro (XWIKI-20394). A
+document that is itself restricted is still rendered restricted (`DocumentContentAsyncRenderer`).
+The flag does need propagating when content is rendered in the *current* context, e.g. a
+non-isolated include, which is why the include macro passes it on.
 
 ## Rendering an XObject property — display it, never parse its raw value
 
