@@ -59,6 +59,16 @@ A failed docker test archives a `.png` and an `.flv` recording of the whole test
 - **A JSX listener can register after its widget is ready.** JSX code runs inside `require([...], cb)`
   and `xwiki-l10n!` alone costs a server round trip, while a widget bootstrapped on DOM ready (e.g.
   `.xtree`) can fire its `ready` event before `cb` runs. Nothing orders the two.
+- **A background tab runs late.** Browsers throttle timers in inactive tabs: Firefox delayed each
+  timer-driven step 1–3 s, 4–6 s when the tab was busy, and can suspend the tab. A multi-user test
+  that switches to tab B and waits there for work tab A still has pending (an upload queued through a
+  jQuery `Deferred`, a realtime push) times out though nothing is stuck, and the dump taken after the
+  timeout shows A's work unfinished or just finished. It passes locally, where A finishes before it is
+  hidden; it shows up when CI is slow. Signs: a browser-side log shows A's `document.visibilityState`
+  `hidden` during the wait, and the gap drops to milliseconds once A is reactivated. Fix in the page
+  object: `RealtimeRichTextAreaElement#repeatedWait` (short waits, switching to each tab in between)
+  — every realtime wait must go through it. A separate window instead of a tab avoids the throttling
+  but changes focus, so the caret can land elsewhere.
 - **The wiki was already broken when the test started.** Less common, but it happens: a server-side
   race during provisioning or extension installation leaves a bad state that no error reports, and
   whichever test later needs it fails. In XWIKI-24997, an XClass saved while another document was
@@ -88,6 +98,9 @@ CI symptom (the control, confirming the hypothesis), the fix passes, and the pat
   group failing repetitions by the line of the deepest test frame before fixing "the" cause.
 - A race that needs CI's latency often never reproduces locally: insert a temporary `Thread.sleep`
   where CI is slower rather than hunting for it.
+- Background tab: delay the server step the hidden tab waits for, and keep that tab busy with
+  `setInterval(() => { const end = Date.now() + 40; while (Date.now() < end) {} }, 100)` through
+  `executeScript`, which stretches the throttling.
 - Scripted submit: just before the click, defer it —
   `form.submit = function() { setTimeout(() => HTMLFormElement.prototype.submit.call(form), 100); };`
   through `executeScript` (jQuery's `.submit()` calls the element's own `submit`).
