@@ -16,7 +16,11 @@ authoritative source of truth.
 
 ## Formatting
 
-- **Lines must not exceed 120 characters.** This is enforced by Checkstyle in the `quality` profile.
+- **Lines must not exceed 120 characters** in source files, enforced for Java by Checkstyle in the
+  `quality` profile. **Prose is never hard-wrapped**: in a commit body, a JIRA issue or comment, an
+  xwiki.org page, a forum post, a Matrix message or a GitHub PR/issue/advisory body, each paragraph and
+  each list item is one line, however long. Each of these reflows prose itself (JIRA even renders every
+  newline as a visible break); only code blocks keep their line structure.
 - **LGPL license headers** are required on **every** file, configuration files included (validated by
   `license-maven-plugin`). Add missing headers with `mvn license:format -B -ntp`. The comment syntax
   depends on the file type: `/* … */` for Java & JavaScript, `<!-- … -->` for XML & Vue, `#` for shell
