@@ -1845,6 +1845,13 @@ async function investigate(incident, job, args) {
   if (incident.class === 1 && incident.window && !incident.window.lastGood) {
     incident.window = await deeperTestWindow(incident, job, args);
     Object.assign(incident, ageOf(incident.window));
+    // The horizon was checked against the shallow window's age, a lower bound: the deeper one can
+    // date the breakage past it, and then it gets no write either.
+    incident.beyondHorizon = incident.ageDays != null && incident.ageDays > args.horizon;
+    if (incident.beyondHorizon) {
+      incident.blame = { tier: 'none', reason: `older than the ${args.horizon}-day horizon`, suspects: [] };
+      return;
+    }
   }
   const { firstBad, lastGood } = incident.window || {};
   if (!firstBad || !lastGood) {

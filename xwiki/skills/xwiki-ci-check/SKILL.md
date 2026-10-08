@@ -434,7 +434,7 @@ when none of that is open, never instead of it. `summary.stabilise.blockers` is 
 | Tier | What | PR |
 |---|---|---|
 | **A — mechanical** | License headers, a Checkstyle violation the error localises exactly (line > 120 chars, unused import, whitespace, missing newline), a trivially broken compile after a rename | ready for review |
-| **A — additive** | A failing coverage check: add the missing unit tests (`xwiki-increase-test-coverage`). **Never lower the ratio or edit an existing test** | ready for review |
+| **A — additive** | A failing coverage check whose `blame.tier` is `certain` or `likely`: add the missing unit tests (`xwiki-increase-test-coverage`). **Never lower the ratio or edit an existing test** | **draft** — new tests are code the culprit, who is usually already writing them, has to judge |
 | **B — inferred** | A UI change renamed a selector and the page object still queries the old one; renamed or moved test resources | **draft** |
 | **B — follows the culprit** | A *unit* test still expecting a value the culprit commit's own diff changed — see below | **draft** |
 | **C — never** | Changing an assertion, an expected value, a timeout, or any production logic — except the row above | — |
@@ -443,9 +443,9 @@ when none of that is open, never instead of it. `summary.stabilise.blockers` is 
 the product is wrong; "fixing" it by editing the expectation launders a real regression into a green
 build. If a fix seems to need an assertion change, that is a comment to a human, not a PR.
 
-**"Follows the culprit" is that comment, made answerable in one click.** `de77ad26` made
-`getCookies()` return an empty array instead of `null`, and `BrowserPDFPrinterTest` kept stubbing
-`null`: a one-line fix, unless the browser treats the two differently and the line hides the
+**"Follows the culprit" is that comment, made answerable in one click.** A commit changes what a
+method returns (an empty array instead of `null`, say) and a unit test still stubs or expects the
+old value: a one-line fix, unless a caller treats the two differently and the line hides the
 regression — which only the author knows. So the PR asks, and only when all of these hold:
 
 - `blame.tier` is `certain` or `likely` — no culprit, no question to ask;
