@@ -122,7 +122,8 @@ This is the declarative map of how testing works in XWiki. For **doing** the wor
   document's authors, a REST resource) goes through `setup.rest()` or `TestUtils#getString`, which
   skip the page load. `executeAndGetBodyAsString` is not that shortcut: it drives the browser too.
   `ViewPage` (`BasePage`) already waits for the window `load` event and every pending request, so
-  images in the content are loaded — don't add a wait of your own for that.
+  images and async content (anything filled in by a request after the page loads) are in place —
+  don't add a wait of your own for them.
 - **Don't pay the timeout (Docker functional tests)** — never wait on a timer (`Thread.sleep()`),
   and never burn the full Selenium wait timeout waiting for something that will not appear. The waiting APIs (`findElement`, `findElements`, and
   the `waitUntil…` helpers) are for elements *expected to be present*; to assert an element's
