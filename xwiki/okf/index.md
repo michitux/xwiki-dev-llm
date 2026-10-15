@@ -41,8 +41,8 @@ in the topic file. Read the entry to choose, then read the file — never act on
 - **frontend** — client-side code: JavaScript modules and WebJars, CSS as a skin extension, JS
   backward compatibility, accessibility.
 - **server-side-rendering** — what a wiki page, sheet or template emits: space gobbling and
-  `$doc.display` silently eat the blank lines between generated blocks, nesting a paragraph or
-  failing a macro with *"cannot be used inline"*.
+  `$doc.display` eat the blank lines between generated blocks (*"cannot be used inline"*), and which
+  Velocity lines need a closing `##`.
 - **translations** — the lifecycle of a translation key: which file a bundle lives in, the
   l10n/Weblate registration a *new* one needs, which locale committers maintain, deprecating and
   renaming.
