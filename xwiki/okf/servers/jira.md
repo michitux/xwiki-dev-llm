@@ -227,14 +227,16 @@ container, escape only *active* markup — never over-escape, and never escape i
   added to "escape" markup renders as a **visible backslash** (`\- JAVA\_OPTS=…` shows the `\-`/`\_`).
   Put the **raw** snippet in the block; escaping is a *prose* concern only.
 - **`{{…}}` is a style, not a raw container.** JIRA markup inside it still renders (`{{_foo_}}` comes
-  out italic, `{{[x]}}` as a broken link), so backslash-escape it there (`{{\_foo\_}}`). Angle brackets
-  survive (`{{<version>/solr/}}`). It must not be glued to a word character: `{{curl}}s` renders
-  literally (add a space or reword).
+  out italic, `{{<!--x-->}}` with `x` struck through, `{{[x]}}` as a broken link), so backslash-escape
+  it there (`{{\_foo\_}}`, `{{<!\-\-x\-\->}}`). Angle brackets survive (`{{<version>/solr/}}`). It must
+  not be glued to a word character: `{{curl}}s` renders literally (add a space or reword).
 - **A `{name}` placeholder is a macro call**, the classic case being a REST path template
   (`/wikis/{wiki}/spaces/{space}/…`): it breaks the `{{…}}` span *and* the list around it. Write
   `<wiki>`, which always survives; `\{wiki\}` works mid-span but not right before the closing `}}`.
-- **A literal spanning lines or containing `{{`/`}}` goes in a `{code}`/`{noformat}` block** (raw),
-  even a one-line XWiki macro: no escaping keeps `{{velocity}}` intact inside `{{…}}`.
+- **A literal spanning lines goes in a `{code}`/`{noformat}` block** (raw).
+- **An inline XWiki macro takes its braces as numeric entities:** `{{&#123;&#123;velocity&#125;&#125;}}`
+  renders as monospace `{{velocity}}`. Backslashes do not work there, and unescaped braces end up
+  outside the monospace.
 
 **Preview before writing, verify after** — reading back the source you sent proves nothing. Before
 any description or comment write, `POST /rest/api/1.0/render` with
