@@ -36,8 +36,9 @@ https://dev.xwiki.org/xwiki/bin/view/Community/DevelopmentPractices#HServers
 | [dev.xwiki.org](https://dev.xwiki.org/xwiki/bin/view/Community/) | The dev guide / development practices wiki — source of truth for conventions and process. | No MCP. WebFetch; index with context-mode for repeated lookups. |
 | [l10n.xwiki.org](https://l10n.xwiki.org) | Weblate — contribute translations. | No MCP. See the `xwiki-translations` skill for the dev side of i18n. |
 | [design.xwiki.org](https://design.xwiki.org) | Design proposals. | No MCP. WebFetch. |
+| [test.xwiki.org](https://test.xwiki.org) | The manual tests run at each release, and their results — the source when automating one. | REST: [[manual-tests]]. |
 | [elk.xwiki.org](https://elk.xwiki.org) | Anonymous usage stats / market-share metrics. | Rarely relevant to coding. |
-| `#xwiki:matrix.xwiki.org` | Real-time chat (Matrix). | Not programmatically accessed by the LLM. |
+| `#xwiki:matrix.xwiki.com` | Real-time chat (Matrix), unencrypted. | Client-server API through an account on another homeserver (matrix.xwiki.com takes no registrations); `xwiki-ci-check` posts its digest there. |
 
 ## What has MCP today vs. WebFetch-only
 
@@ -47,15 +48,15 @@ https://dev.xwiki.org/xwiki/bin/view/Community/DevelopmentPractices#HServers
   extensions page within a session, index it once with context-mode (if installed) and search,
   rather than re-fetching.
 
-## Accessing / writing to xwiki.org & extensions.xwiki.org via REST
+## Accessing / writing to the XWiki-run sites via REST
 
-Both sites run XWiki; program against the REST API (`/xwiki/rest/…`), not the `/xwiki/bin/…` UI URLs.
+xwiki.org, extensions, test, dev and design all run XWiki; program against the REST API
+(`/xwiki/rest/…`), not the `/xwiki/bin/…` UI URLs.
 The procedure lives in the `xwiki-rest-api` skill; the durable gotchas are:
 
 - **The sites sit behind Cloudflare, which blocks a browser-like `User-Agent`.** A `Mozilla/5.0 …
   Chrome/…` UA — or no UA at all — gets `403` on `/xwiki/rest/…`; the default `curl/8.x` UA gets
-  through, so **never dress the request up as a browser**. The same block fronts ci.xwiki.org
-  ([[jenkins]]): it is a farm-wide rule, not a doc-site one.
+  through, so **never dress the request up as a browser**. It fronts ci.xwiki.org too ([[jenkins]]).
 - **Only `/rest` honors HTTP Basic auth.** The `/bin/` (view/edit/save) endpoints resolve Basic-auth
   requests to `XWiki.Guest`, so a `form_token` scraped from a `/bin/edit` page is the *guest* token
   and gets rejected — authenticate and read/write through `/rest`.
