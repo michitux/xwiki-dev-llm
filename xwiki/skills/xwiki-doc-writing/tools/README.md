@@ -185,6 +185,13 @@ you never have to open the PNG to find out.
 - The tools send `curl/8.0` as User-Agent, the one Cloudflare lets through (`okf/servers/index.md`).
 - Only `/rest` honours Basic auth. A `/bin/` URL is fetched as **guest**, which is the right lens for
   the rendered-page checks in `verify` but means a Live Data table rendered there shows no rows.
+- **A Change Request is created through the application's `/changerequest/` form endpoint — it has no
+  REST API** — and these tools do not do it. From a cookie
+  session (POST `j_username`, `j_password` and the login page's `form_token` to
+  `/bin/loginsubmit/XWiki/XWikiLogin`), POST the hidden fields of the
+  `/bin/edit/<Space>/<Page>?editor=wiki` form with the new `content`, `docReference=<wiki>:<Space>.<Page>`,
+  `crTitle` and `crDescription` (`crDraft=1` for a draft) to `/xwiki/changerequest/<wiki>/create`: the
+  302's `Location` is the Change Request.
 - A conversion also has to finish the **original** page — strip its prose, wire its "Documentation"
   button, delete its attachments, triage its backlinks. That is `okf/conventions/documentation-migration.md`
   and the `xwiki-doc-convert` skill; these tools do not do it for you.
