@@ -20,8 +20,6 @@ here. A slimmed copy of this map is injected into every XWiki session via
    - `durable` → the inline content is the answer.
    - `volatile` → **do not trust any value written here**; follow the `verify:` recipe (read
      `pom.xml`, use the `sonarqube`/`discourse` MCP, or `curl` the listed dev-wiki source).
-3. For repeated lookups of the same external page, index it once with context-mode (if installed)
-   — the OKF never *requires* it.
 
 The full how-to-read-and-extend protocol is the `xwiki-knowledge` skill.
 
@@ -86,6 +84,8 @@ in the topic file. Read the entry to choose, then read the file — never act on
 - **wiki-user-scope** — why a subwiki offers only main-wiki users and groups: where its user scope is
   stored (not on the descriptor) and what it defaults to.
 - **solr-search** — XWiki's Solr backend, and what running it against a remote Solr requires.
+- **data-migrations** — writing a Hibernate data migration, and why an `AbstractDocumentsMigration`
+  can succeed while changing nothing.
 - **module-design** — a general design lens, not an XWiki rule (depth, deletion test, locality,
   seams), for the classes a change adds or reshapes; what it finds is only ever a suggestion.
 
