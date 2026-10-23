@@ -243,7 +243,7 @@ for (const incident of incidents) {
   const peers = incident.signature ? sameCause.get(`${incident.repo}\u0000${incident.signature}`) : null;
   incident.fixState = await staleSnapshot(incident, targetJobs.get(incident.id) || [], args, peers || [incident])
     || chatClaim(incident, chat, 'announced')
-    || await forwardFix(incident, jobsById.get(incident.id), args)
+    || await forwardFix(incident, jobsById.get(incident.id), args, targetJobs.get(incident.id) || [])
     || await inFlightFix(incident, args)
     || chatClaim(incident, chat, 'being-handled')
     || await issueClaim(incident)
